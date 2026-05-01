@@ -1,36 +1,106 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Kotak Saran Elektronik — FEB Universitas Gajayana Malang
 
-## Getting Started
+Versi modern dari **Kotak Saran Elektronik Fakultas Ekonomi dan Bisnis Universitas Gajayana Malang**. UI di-rebuild dari nol dengan Next.js 14, Tailwind CSS, dan animasi modern, namun tetap menggunakan **Google Form + Google Spreadsheet** sebagai backend penyimpanan data — sehingga seluruh masukan tetap masuk ke spreadsheet resmi yang sama persis seperti form aslinya.
 
-First, run the development server:
+![hero](public/og.svg)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## ✨ Fitur Antarmuka
+
+- **Wizard 4 langkah** dengan progress bar (Tentang Anda → Privasi → Masukan → Tinjau & Kirim)
+- **Conditional anonim**: opsi anonim sepenuhnya, opsi identitas, atau pilih sendiri
+- **Validasi inline** + character counter untuk masukan utama
+- **Dark / Light / System mode** dengan persist via `localStorage`
+- **Animated background blobs** + grid pattern
+- **Mobile-first**, responsif penuh hingga >1280px
+- **Zero-state ramah** dan halaman terima kasih yang dipersonalisasi
+- **i18n Indonesia (id)** sepenuhnya
+
+## 🧠 Arsitektur
+
+```
+Browser  →  Next.js Server Action (/api/saran)  →  Google Forms (formResponse)
+                                                    │
+                                                    ▼
+                                            Google Spreadsheet
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- Form dikirim ke endpoint internal `/api/saran` dalam format JSON.
+- Server (Edge Runtime) memvalidasi payload, lalu mem-POST ulang ke
+  `https://docs.google.com/forms/d/e/<FORM_ID>/formResponse` dengan field `entry.X`
+  yang tepat — termasuk handling untuk opsi "Other" dan dua section bercabang
+  (IDENTITAS vs ANONYMOUS) sesuai logika section di Google Form aslinya.
+- Tidak ada database. Tidak ada secret di klien. Cukup deploy.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🛠️ Stack
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Next.js 14** (App Router, Edge runtime untuk API)
+- **TypeScript**, strict mode
+- **Tailwind CSS** + design tokens HSL custom (terang/gelap)
+- **lucide-react** untuk ikon
+- **class-variance-authority** + **tailwind-merge** untuk varian komponen
 
-## Learn More
+## 🚀 Menjalankan secara lokal
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm install
+npm run dev
+# → http://localhost:3000
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🔧 Konfigurasi
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Defaultnya app menggunakan Form ID resmi FEB UNIGA. Untuk mengganti target form
+(misal saat menduplikasi spreadsheet untuk staging) cukup set:
 
-## Deploy on Vercel
+```bash
+# .env.local
+NEXT_PUBLIC_GOOGLE_FORM_ID=1FAIpQLSeIAV4B8E9sUkgDUqqo0e9Z9kMmlruKDSU6sTtk6AKlZFs-Sw
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Bila Anda mengganti pertanyaan di Google Form, perbarui id `entry.X` di
+[`src/lib/form-config.ts`](src/lib/form-config.ts) — tinggal lihat HTML viewform
+dan cari atribut `data-params`/`name="entry.XXXX"`.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## ☁️ Deploy ke Vercel
+
+1. Push repo ini ke GitHub.
+2. Di Vercel: **New Project** → import repo → biarkan semua default.
+3. (Opsional) Set env var `NEXT_PUBLIC_GOOGLE_FORM_ID` jika berbeda dari default.
+4. Deploy. Domain langsung dapat dipakai untuk menerima masukan publik.
+
+Catatan: route `/api/saran` berjalan di Edge Runtime sehingga cold start sangat
+cepat dan kompatibel dengan semua region Vercel.
+
+## 🔐 Privasi
+
+- Submisi anonim **tidak** mengirim field nama/NIM, hanya field anonymous yang
+  dikirim ke Google Form.
+- Tidak ada cookie / pelacak / analytics di proyek ini secara default.
+- Validasi dasar (panjang minimum, opsi terdaftar) dijalankan di server agar
+  spam dan salah-input dasar bisa ditolak sebelum mencapai Google.
+
+## 📁 Struktur Proyek
+
+```
+src/
+├─ app/
+│  ├─ api/saran/route.ts     # Edge route → Google Form
+│  ├─ globals.css             # Theme tokens & utilities
+│  ├─ layout.tsx              # Root layout + ThemeProvider
+│  └─ page.tsx                # Landing + form
+├─ components/
+│  ├─ saran-form.tsx          # 4-step wizard (komponen utama)
+│  ├─ progress-steps.tsx
+│  ├─ option-card.tsx
+│  ├─ theme-provider.tsx      # Light/Dark/System
+│  ├─ theme-toggle.tsx
+│  ├─ brand-mark.tsx
+│  └─ ui/{button,input,textarea,label}.tsx
+└─ lib/
+   ├─ form-config.ts          # Entry ids + tipe payload
+   └─ utils.ts
+```
+
+## 📜 Lisensi
+
+Internal — Fakultas Ekonomi dan Bisnis Universitas Gajayana Malang.
