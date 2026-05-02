@@ -9,7 +9,15 @@ const inter = Inter({
   display: "swap",
 });
 
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  process.env.VERCEL_URL ||
+  "https://kotak-saran.vercel.app";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    SITE_URL.startsWith("http") ? SITE_URL : `https://${SITE_URL}`,
+  ),
   title:
     "Kotak Saran Elektronik — Fakultas Ekonomi dan Bisnis Universitas Gajayana Malang",
   description:
@@ -18,18 +26,36 @@ export const metadata: Metadata = {
     "kotak saran",
     "FEB",
     "Universitas Gajayana",
-    "Malang",
+    "UNIGA Malang",
     "keluhan",
     "saran mahasiswa",
   ],
   authors: [{ name: "Fakultas Ekonomi dan Bisnis Universitas Gajayana Malang" }],
+  icons: {
+    icon: [{ url: "/favicon.ico", sizes: "any" }],
+    apple: "/apple-touch-icon.png",
+  },
   openGraph: {
     title: "Kotak Saran Elektronik FEB UNIGA Malang",
     description:
       "Suarakan masukan Anda untuk peningkatan kualitas layanan FEB Universitas Gajayana Malang.",
     type: "website",
     locale: "id_ID",
+    images: [{ url: "/img/uniga-logo@2x.png", width: 440, height: 440 }],
   },
+  twitter: {
+    card: "summary",
+    title: "Kotak Saran Elektronik FEB UNIGA Malang",
+    description:
+      "Suarakan masukan Anda untuk peningkatan kualitas layanan FEB Universitas Gajayana Malang.",
+    images: ["/img/uniga-logo@2x.png"],
+  },
+};
+
+export const viewport = {
+  themeColor: "#1d4ed8",
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({
