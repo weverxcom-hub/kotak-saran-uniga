@@ -1,16 +1,20 @@
 import { google } from "googleapis";
 
 /**
- * Klien Google Sheets API yang membaca spreadsheet jawaban Google Form.
+ * Klien Google Sheets API — baca dan tulis ke spreadsheet rekap masukan.
  *
  * Kredensial diambil dari environment:
  *   - GOOGLE_SERVICE_ACCOUNT_EMAIL
  *   - GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY (newline-encoded)
  *   - atau GOOGLE_SERVICE_ACCOUNT_JSON (JSON string utuh)
  *
+ * Service account harus diberi akses Editor pada spreadsheet target supaya
+ * bisa append baris (untuk submission baru). Akses Viewer cukup untuk
+ * /report yang hanya membaca.
+ *
  * Spreadsheet target diatur via:
  *   - REPORT_SHEET_ID  → ID spreadsheet
- *   - REPORT_SHEET_RANGE → mis. "Form Responses 1!A:M" (default ke A:Z dari sheet pertama)
+ *   - REPORT_SHEET_RANGE → mis. "Sheet1!A:L" (default ke A:Z dari sheet pertama)
  */
 
 export type RawRow = string[];
@@ -73,12 +77,16 @@ function getCredentials() {
   return { client_email: email, private_key: privateKey };
 }
 
-function getSheetsClient() {
+function getSheetsClient(scope: "read" | "write" = "read") {
   const creds = getCredentials();
   const auth = new google.auth.JWT({
     email: creds.client_email,
     key: creds.private_key,
-    scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
+    scopes: [
+      scope === "write"
+        ? "https://www.googleapis.com/auth/spreadsheets"
+        : "https://www.googleapis.com/auth/spreadsheets.readonly",
+    ],
   });
   return google.sheets({ version: "v4", auth });
 }
@@ -288,6 +296,78 @@ export function applyFilters(
       if (!haystack.includes(q)) return false;
     }
     return true;
+  });
+}
+
+/**
+ * Format timestamp Indonesia (DD/MM/YYYY HH:mm:ss) — sama dengan format yang
+ * Google Forms tulis di spreadsheet jawaban, supaya parser di sisi /report
+ * kompatibel.
+ */
+function formatIndonesianTimestamp(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const dd = pad(d.getDate());
+  const mm = pad(d.getMonth() + 1);
+  const yyyy = d.getFullYear();
+  const h = pad(d.getHours());
+  const min = pad(d.getMinutes());
+  const sec = pad(d.getSeconds());
+  return `${dd}/${mm}/${yyyy} ${h}:${min}:${sec}`;
+}
+
+export type AppendPayload = {
+  saudaraAdalah: string;
+  unitKerja: string;
+  isAnonim: "Ya" | "Tidak";
+  nama?: string;
+  nim?: string;
+  masukan: string;
+  kronologi?: string;
+  kontak?: string;
+};
+
+/**
+ * Append satu baris ke spreadsheet rekap. Skema kolom (12 kolom):
+ *   A Timestamp
+ *   B Saudara adalah
+ *   C Unit kerja / Prodi
+ *   D Apakah Anonim?
+ *   E Nama (jika identitas)
+ *   F NIM/NIP (jika identitas)
+ *   G Masukan (identitas)
+ *   H Kronologi (identitas)
+ *   I Kontak (identitas)
+ *   J Masukan (anonim)
+ *   K Kronologi (anonim)
+ *   L Kontak (anonim)
+ *
+ * Service account butuh akses Editor pada spreadsheet target.
+ */
+export async function appendSubmission(payload: AppendPayload): Promise<void> {
+  const { sheetId } = getConfig();
+  const sheets = getSheetsClient("write");
+  const isAnonim = payload.isAnonim === "Ya";
+  const timestamp = formatIndonesianTimestamp(new Date());
+  const row = [
+    timestamp, // A
+    payload.saudaraAdalah, // B
+    payload.unitKerja, // C
+    payload.isAnonim, // D "Ya" | "Tidak"
+    isAnonim ? "" : (payload.nama ?? ""), // E
+    isAnonim ? "" : (payload.nim ?? ""), // F
+    isAnonim ? "" : payload.masukan, // G
+    isAnonim ? "" : (payload.kronologi ?? ""), // H
+    isAnonim ? "" : (payload.kontak ?? ""), // I
+    isAnonim ? payload.masukan : "", // J
+    isAnonim ? (payload.kronologi ?? "") : "", // K
+    isAnonim ? (payload.kontak ?? "") : "", // L
+  ];
+  await sheets.spreadsheets.values.append({
+    spreadsheetId: sheetId,
+    range: "A:L",
+    valueInputOption: "USER_ENTERED",
+    insertDataOption: "INSERT_ROWS",
+    requestBody: { values: [row] },
   });
 }
 

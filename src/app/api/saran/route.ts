@@ -1,13 +1,8 @@
 import { NextResponse } from "next/server";
-import {
-  ENTRY_IDS,
-  FORM_RESPONSE_URL,
-  ROLE_OPTIONS,
-  UNIT_OPTIONS,
-  type SuggestionPayload,
-} from "@/lib/form-config";
+import { ROLE_OPTIONS, UNIT_OPTIONS, type SuggestionPayload } from "@/lib/form-config";
+import { appendSubmission, SheetsConfigError } from "@/lib/sheets";
 
-export const runtime = "edge";
+export const runtime = "nodejs";
 
 function isString(v: unknown): v is string {
   return typeof v === "string";
@@ -54,6 +49,9 @@ function validate(input: unknown): SuggestionPayload | { error: string } {
     return { error: "Kronologi terlalu panjang (maks 5000 karakter)." };
   if (kontak.length > 60) return { error: "Nomor kontak terlalu panjang." };
 
+  // Allow free-text saudaraAdalah selain ROLE_OPTIONS (sesuai semula).
+  void ROLE_OPTIONS;
+
   return {
     saudaraAdalah,
     unitKerja: unitKerja as (typeof UNIT_OPTIONS)[number],
@@ -64,44 +62,6 @@ function validate(input: unknown): SuggestionPayload | { error: string } {
     kronologi,
     kontak,
   };
-}
-
-function buildFormBody(payload: SuggestionPayload): URLSearchParams {
-  const body = new URLSearchParams();
-
-  // Saudara adalah - support "Other" via __other_option__
-  const knownRole = (ROLE_OPTIONS as readonly string[]).includes(
-    payload.saudaraAdalah,
-  );
-  if (knownRole) {
-    body.append(ENTRY_IDS.saudaraAdalah, payload.saudaraAdalah);
-  } else if (payload.saudaraAdalah) {
-    body.append(ENTRY_IDS.saudaraAdalah, "__other_option__");
-    body.append(`${ENTRY_IDS.saudaraAdalah}.other_option_response`, payload.saudaraAdalah);
-  }
-
-  body.append(ENTRY_IDS.unitKerja, payload.unitKerja);
-  body.append(ENTRY_IDS.isAnonim, payload.isAnonim);
-
-  if (payload.isAnonim === "Tidak") {
-    if (payload.nama) body.append(ENTRY_IDS.identitas.nama, payload.nama);
-    if (payload.nim) body.append(ENTRY_IDS.identitas.nim, payload.nim);
-    body.append(ENTRY_IDS.identitas.masukan, payload.masukan);
-    if (payload.kronologi)
-      body.append(ENTRY_IDS.identitas.kronologi, payload.kronologi);
-    if (payload.kontak) body.append(ENTRY_IDS.identitas.kontak, payload.kontak);
-  } else {
-    body.append(ENTRY_IDS.anonim.masukan, payload.masukan);
-    if (payload.kronologi)
-      body.append(ENTRY_IDS.anonim.kronologi, payload.kronologi);
-    if (payload.kontak) body.append(ENTRY_IDS.anonim.kontak, payload.kontak);
-  }
-
-  body.append("fvv", "1");
-  body.append("pageHistory", payload.isAnonim === "Tidak" ? "0,1" : "0,2");
-  body.append("submissionTimestamp", String(Date.now()));
-
-  return body;
 }
 
 export async function POST(req: Request) {
@@ -117,35 +77,35 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: validated.error }, { status: 400 });
   }
 
-  const body = buildFormBody(validated);
-
   try {
-    const res = await fetch(FORM_RESPONSE_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
-      },
-      body: body.toString(),
-      redirect: "manual",
+    await appendSubmission({
+      saudaraAdalah: validated.saudaraAdalah,
+      unitKerja: validated.unitKerja,
+      isAnonim: validated.isAnonim,
+      nama: validated.nama,
+      nim: validated.nim,
+      masukan: validated.masukan,
+      kronologi: validated.kronologi,
+      kontak: validated.kontak,
     });
-
-    // Google Forms returns 200 with formResponse page on success,
-    // or 302 redirect; both are acceptable.
-    if (res.status >= 200 && res.status < 400) {
-      return NextResponse.json({ ok: true });
-    }
-    return NextResponse.json(
-      { error: `Gagal mengirim ke Google Form (status ${res.status}).` },
-      { status: 502 },
-    );
+    return NextResponse.json({ ok: true });
   } catch (err) {
+    if (err instanceof SheetsConfigError) {
+      return NextResponse.json(
+        {
+          error:
+            err.message +
+            " Hubungi pengelola sistem untuk konfigurasi spreadsheet.",
+        },
+        { status: 500 },
+      );
+    }
+    const message =
+      err instanceof Error
+        ? err.message
+        : "Terjadi kesalahan saat menyimpan ke spreadsheet.";
     return NextResponse.json(
-      {
-        error:
-          err instanceof Error
-            ? `Gagal menghubungi Google Form: ${err.message}`
-            : "Gagal menghubungi Google Form.",
-      },
+      { error: `Gagal menyimpan ke Spreadsheet: ${message}` },
       { status: 502 },
     );
   }

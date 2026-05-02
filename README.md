@@ -1,6 +1,6 @@
 # Kotak Saran Elektronik — FEB Universitas Gajayana Malang
 
-Versi modern dari **Kotak Saran Elektronik Fakultas Ekonomi dan Bisnis Universitas Gajayana Malang**. UI di-rebuild dari nol dengan Next.js 14, Tailwind CSS, dan animasi modern, namun tetap menggunakan **Google Form + Google Spreadsheet** sebagai backend penyimpanan data — sehingga seluruh masukan tetap masuk ke spreadsheet resmi yang sama persis seperti form aslinya.
+Versi modern dari **Kotak Saran Elektronik Fakultas Ekonomi dan Bisnis Universitas Gajayana Malang**. UI di-rebuild dari nol dengan Next.js 14, Tailwind CSS, dan animasi modern. Semua masukan disimpan langsung ke **Google Spreadsheet** lewat Google Sheets API — satu sumber data untuk wizard publik (`/`) dan dashboard admin (`/report`).
 
 ![hero](public/og.svg)
 
@@ -18,22 +18,26 @@ Versi modern dari **Kotak Saran Elektronik Fakultas Ekonomi dan Bisnis Universit
 ## 🧠 Arsitektur
 
 ```
-Browser  →  Next.js Server Action (/api/saran)  →  Google Forms (formResponse)
-                                                    │
-                                                    ▼
-                                            Google Spreadsheet
+Browser  →  Next.js POST /api/saran  →  Google Sheets API (append row)
+                                              │
+                                              ▼
+                                       Google Spreadsheet
+                                              │
+                                              ▼
+Admin   →  /report (cookie-protected)  ←  Google Sheets API (read)
 ```
 
 - Form dikirim ke endpoint internal `/api/saran` dalam format JSON.
-- Server (Edge Runtime) memvalidasi payload, lalu mem-POST ulang ke
-  `https://docs.google.com/forms/d/e/<FORM_ID>/formResponse` dengan field `entry.X`
-  yang tepat — termasuk handling untuk opsi "Other" dan dua section bercabang
-  (IDENTITAS vs ANONYMOUS) sesuai logika section di Google Form aslinya.
-- Tidak ada database. Tidak ada secret di klien. Cukup deploy.
+- Server memvalidasi payload, lalu append baris baru ke spreadsheet via
+  Google Sheets API (`spreadsheets.values.append`) menggunakan service account.
+- Skema kolom 12-kolom (A–L) memisahkan jawaban identitas vs anonim, sehingga
+  pengelola bisa filter / mengekspor masing-masing tanpa kebocoran identitas.
+- Tidak ada database. Tidak ada secret di klien.
 
 ## 🛠️ Stack
 
-- **Next.js 14** (App Router, Edge runtime untuk API)
+- **Next.js 14** (App Router, Node.js runtime untuk API yang akses Sheets)
+- **`googleapis`** untuk read & write ke Google Sheets via service account
 - **TypeScript**, strict mode
 - **Tailwind CSS** + design tokens HSL custom (terang/gelap)
 - **lucide-react** untuk ikon
@@ -43,29 +47,47 @@ Browser  →  Next.js Server Action (/api/saran)  →  Google Forms (formRespons
 
 ```bash
 npm install
+cp .env.example .env.local
+# → isi REPORT_PASSWORD, REPORT_SHEET_ID, dan kredensial service account
 npm run dev
 # → http://localhost:3000
 ```
 
-## 🔧 Konfigurasi
+Lihat tabel env var di section [Admin Dashboard `/report`](#-admin-dashboard-report)
+untuk daftar lengkap.
 
-Defaultnya app menggunakan Form ID resmi FEB UNIGA. Untuk mengganti target form
-(misal saat menduplikasi spreadsheet untuk staging) cukup set:
+## 📝 Skema Spreadsheet
 
-```bash
-# .env.local
-NEXT_PUBLIC_GOOGLE_FORM_ID=1FAIpQLSeIAV4B8E9sUkgDUqqo0e9Z9kMmlruKDSU6sTtk6AKlZFs-Sw
-```
+Sheet pertama harus punya **header row** + 12 kolom berikut (urutan persis):
 
-Bila Anda mengganti pertanyaan di Google Form, perbarui id `entry.X` di
-[`src/lib/form-config.ts`](src/lib/form-config.ts) — tinggal lihat HTML viewform
-dan cari atribut `data-params`/`name="entry.XXXX"`.
+| Kolom | Header                          | Isi |
+| ----- | ------------------------------- | --- |
+| A     | `Timestamp`                     | DD/MM/YYYY HH:MM:SS (otomatis di-set saat append) |
+| B     | `Saudara adalah`                | DOSEN / MAHASISWA / TENDIK / atau bebas |
+| C     | `Unit kerja / Prodi`            | salah satu dari `UNIT_OPTIONS` |
+| D     | `Apakah Anonim?`                | `Ya` atau `Tidak` |
+| E     | `Nama (jika identitas)`         | hanya diisi bila D=`Tidak` |
+| F     | `NIM/NIP (jika identitas)`      | hanya diisi bila D=`Tidak` |
+| G     | `Masukan (identitas)`           | hanya diisi bila D=`Tidak` |
+| H     | `Kronologi (identitas)`         | hanya diisi bila D=`Tidak` |
+| I     | `Kontak (identitas)`            | hanya diisi bila D=`Tidak` |
+| J     | `Masukan (anonim)`              | hanya diisi bila D=`Ya` |
+| K     | `Kronologi (anonim)`            | hanya diisi bila D=`Ya` |
+| L     | `Kontak (anonim)`               | hanya diisi bila D=`Ya` |
+
+Kalau spreadsheet Anda pakai header lain, parser di `lib/sheets.ts` mencoba
+mencocokkan via regex (mis. cari kata "Anonim", "Nama", "Masukan"). Tetap
+disarankan ikut format di atas supaya konsisten.
+
+Untuk mengganti opsi pertanyaan (Peran / Unit), edit
+[`src/lib/form-config.ts`](src/lib/form-config.ts) — itu satu-satunya konfigurasi
+yang perlu disesuaikan jika bisnis logic berubah.
 
 ## 🛡️ Admin Dashboard `/report`
 
 Halaman `/report` adalah panel rekap masukan untuk pengelola FEB. Halaman ini
 dilindungi password sederhana (HMAC-signed cookie session 8 jam) dan membaca
-data langsung dari spreadsheet jawaban Google Form via Google Sheets API.
+data langsung dari spreadsheet yang sama dengan tempat `/api/saran` menulis.
 
 Fitur:
 
@@ -79,14 +101,21 @@ Fitur:
 | Variable | Wajib? | Keterangan |
 | --- | --- | --- |
 | `REPORT_PASSWORD` | ✅ | Password halaman `/report/login`. Disarankan minimal 12 karakter. |
-| `REPORT_SHEET_ID` | ✅ | ID spreadsheet jawaban Google Form (bagian URL antara `/d/` dan `/edit`). |
+| `REPORT_SHEET_ID` | ✅ | ID spreadsheet target (bagian URL antara `/d/` dan `/edit`). Sheet ini menyimpan **semua submission** sekaligus jadi sumber `/report`. |
 | `GOOGLE_SERVICE_ACCOUNT_JSON` | ✅ (opsi A) | Full JSON service account, single-line stringified. |
 | `GOOGLE_SERVICE_ACCOUNT_EMAIL` + `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY` | ✅ (opsi B) | Alternatif kalau JSON susah di-paste ke Vercel UI (karena multiline `private_key`). Kode support kedua format. |
 | `REPORT_SHEET_RANGE` | ❌ | Default `A:Z` di sheet pertama. |
 | `REPORT_SESSION_SECRET` | ❌ | HMAC secret untuk cookie. Default fallback ke `REPORT_PASSWORD` (artinya: tiap ganti password, semua session lama otomatis invalid). |
 
-Service account email harus diberi akses **Viewer** (atau Editor) ke spreadsheet
-jawaban — jika tidak Google Sheets API akan balas 404.
+Service account email **wajib** diberi akses **Editor** ke spreadsheet target
+supaya bisa `append` baris baru saat user submit. Akses Viewer saja tidak
+cukup karena `/api/saran` perlu menulis. Cara grant akses:
+
+1. Buka spreadsheet → klik **Share** (kanan atas)
+2. Tempel email service account (contoh `kotak-saran-app@<project>.iam.gserviceaccount.com`)
+3. Pilih role **Editor**
+4. Hilangkan centang **Notify people** (opsional, service account tidak punya inbox)
+5. Klik **Share**
 
 ### Mengganti password `/report`
 
@@ -108,14 +137,13 @@ Password tidak pernah masuk ke repo / git history. Jangan commit `.env.local`.
 
 1. Push repo ini ke GitHub.
 2. Di Vercel: **New Project** → import repo → biarkan semua default.
-3. Set env var (lihat tabel di atas untuk halaman `/report`):
-   - `NEXT_PUBLIC_GOOGLE_FORM_ID` (opsional, override Form ID default)
-   - `REPORT_PASSWORD`, `REPORT_SHEET_ID`, dan kredensial service account
-     (kalau ingin halaman `/report` aktif).
-4. Deploy. Domain langsung dapat dipakai untuk menerima masukan publik.
+3. Set env var (lihat [tabel di atas](#env-var-yang-dibutuhkan)):
+   `REPORT_PASSWORD`, `REPORT_SHEET_ID`, dan kredensial service account.
+4. Pastikan service account email punya akses **Editor** ke spreadsheet target.
+5. Deploy. Domain langsung dapat dipakai untuk menerima masukan publik dan login `/report`.
 
-Catatan: route `/api/saran` dan API `/report` berjalan di Edge Runtime sehingga
-cold start sangat cepat dan kompatibel dengan semua region Vercel.
+Catatan: API route berjalan di Node.js Runtime karena memakai library
+`googleapis` (tidak edge-compatible).
 
 ## 🔐 Privasi
 
@@ -131,7 +159,7 @@ cold start sangat cepat dan kompatibel dengan semua region Vercel.
 src/
 ├─ app/
 │  ├─ api/
-│  │  ├─ saran/route.ts             # Edge route → Google Form
+│  │  ├─ saran/route.ts             # POST → append row ke Google Sheets
 │  │  └─ report/
 │  │     ├─ login/route.ts          # POST login + DELETE logout
 │  │     ├─ list/route.ts           # GET semua baris (cookie-protected)
@@ -152,8 +180,8 @@ src/
 │  ├─ site-footer.tsx               # "Develop with ❤️ by weverx.com" footer
 │  └─ ui/{button,input,textarea,label}.tsx
 └─ lib/
-   ├─ form-config.ts                # Entry ids + tipe payload
-   ├─ sheets.ts                     # Google Sheets API + Indonesian date parsing
+   ├─ form-config.ts                # Opsi peran/unit + tipe payload
+   ├─ sheets.ts                     # Google Sheets API (read + append) + Indonesian date parsing
    ├─ session.ts                    # HMAC cookie session helper
    └─ utils.ts
 ```
