@@ -164,13 +164,12 @@ function buildColumnMap(headers: string[]): Record<keyof SubmissionRow, number> 
 
 function parseTimestamp(raw: string): string {
   if (!raw) return "";
-  // Google Forms timestamp default format: "11/2/2026 4:30:15"
-  // bisa juga ISO. Normalisasi ke ISO string.
-  const t = Date.parse(raw);
-  if (!isNaN(t)) return new Date(t).toISOString();
-  // Try DD/MM/YYYY HH:mm:ss
+  // Google Forms (Indonesia) menulis timestamp dalam format DD/MM/YYYY HH:mm:ss.
+  // Coba pola DD/MM lebih dulu, karena Date.parse() Node akan salah menafsirkan
+  // sebagai US MM/DD/YYYY ketika dd <= 12 dan mm <= 12 (mis. "5/3/2026" jadi May 3,
+  // padahal di form Indonesia maksudnya 5 Maret).
   const m = raw.match(
-    /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?/,
+    /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})[\sT]+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/,
   );
   if (m) {
     const [, dd, mm, yyyy, h, min, sec] = m;
@@ -183,8 +182,12 @@ function parseTimestamp(raw: string): string {
       Number(min),
       Number(sec ?? 0),
     );
-    return d.toISOString();
+    if (!isNaN(d.getTime())) return d.toISOString();
   }
+  // Pola ISO atau format lain yang dipahami Date.parse (mis. spreadsheet yang
+  // sudah dinormalisasi ke ISO).
+  const t = Date.parse(raw);
+  if (!isNaN(t)) return new Date(t).toISOString();
   return raw;
 }
 
