@@ -1,6 +1,7 @@
 import { SaranForm } from "@/components/saran-form";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { BrandMark } from "@/components/brand-mark";
+import { SiteFooter } from "@/components/site-footer";
 import { ShieldCheck, Sparkles, MessageSquareHeart, Lock } from "lucide-react";
 
 export default function Home() {
@@ -84,18 +85,7 @@ export default function Home() {
         </div>
       </main>
 
-      <footer className="border-t border-border/60 bg-card/40 py-6 text-center text-xs text-muted-foreground">
-        <div className="container space-y-1">
-          <p>
-            © {new Date().getFullYear()} Fakultas Ekonomi dan Bisnis ·
-            Universitas Gajayana Malang
-          </p>
-          <p>
-            Versi modern dari Kotak Saran Elektronik resmi · data tetap tercatat
-            pada sistem terpusat FEB.
-          </p>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

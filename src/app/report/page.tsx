@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { BrandMark } from "@/components/brand-mark";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { SiteFooter } from "@/components/site-footer";
 import { ReportDashboard } from "@/components/report/report-dashboard";
 import { SESSION_COOKIE_NAME, verifySessionToken } from "@/lib/auth";
 
@@ -61,6 +62,8 @@ export default function ReportPage() {
       <main className="container pb-16 pt-2">
         <ReportDashboard />
       </main>
+
+      <SiteFooter variant="compact" />
     </div>
   );
 }
