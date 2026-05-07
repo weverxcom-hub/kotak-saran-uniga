@@ -444,6 +444,317 @@ export type Stats = {
   perMonth: Array<{ month: string; count: number }>;
 };
 
+// ─────────────────────────────────────────────────────────────────────
+// Whistleblower (laporan pelanggaran)
+//
+// Disimpan di TAB TERPISAH bernama "Whistleblower" pada spreadsheet yang
+// sama. Skema kolom (12 kolom A–L):
+//   A Timestamp
+//   B Case ID            (WB-YYYYMMDD-XXXX, di-generate server)
+//   C Kategori
+//   D Saudara adalah
+//   E Unit kerja / Prodi
+//   F Pihak Terlibat
+//   G Apakah Anonim?     (Ya / Tidak)
+//   H Nama               (kalau identitas)
+//   I NIM/NIP            (kalau identitas)
+//   J Kontak             (kalau identitas)
+//   K Detail Pelaporan
+//   L Kronologi & Bukti
+//
+// Untuk WB, kolom Detail (K) dan Kronologi (L) selalu terisi tanpa
+// peduli mode anonim — yang ditahan hanya kolom identitas H/I/J.
+// ─────────────────────────────────────────────────────────────────────
+
+export const WHISTLEBLOWER_SHEET_NAME = "Whistleblower";
+
+export const WHISTLEBLOWER_HEADERS = [
+  "Timestamp",
+  "Case ID",
+  "Kategori",
+  "Saudara adalah",
+  "Unit kerja / Prodi",
+  "Pihak Terlibat",
+  "Apakah Anonim?",
+  "Nama (jika identitas)",
+  "NIM/NIP (jika identitas)",
+  "Kontak (jika identitas)",
+  "Detail Pelaporan",
+  "Kronologi & Bukti",
+] as const;
+
+export type WhistleblowerRow = {
+  rowIndex: number;
+  timestamp: string; // ISO
+  caseId: string;
+  kategori: string;
+  saudaraAdalah: string;
+  unitKerja: string;
+  pihakTerlibat: string;
+  isAnonim: "Ya" | "Tidak" | string;
+  nama: string;
+  nim: string;
+  kontak: string;
+  detail: string;
+  kronologi: string;
+};
+
+export type WhistleblowerStats = {
+  total: number;
+  anonim: number;
+  identitas: number;
+  perKategori: Record<string, number>;
+  perUnit: Record<string, number>;
+  perMonth: Array<{ month: string; count: number }>;
+};
+
+export type WhistleblowerAppendPayload = {
+  saudaraAdalah: string;
+  unitKerja: string;
+  kategori: string;
+  pihakTerlibat?: string;
+  isAnonim: "Ya" | "Tidak";
+  nama?: string;
+  nim?: string;
+  kontak?: string;
+  detail: string;
+  kronologi?: string;
+};
+
+/**
+ * Cek apakah tab "Whistleblower" sudah ada di spreadsheet. Kalau belum,
+ * tambahkan sheet baru lengkap dengan baris header. Idempoten — kalau
+ * sheet sudah ada, fungsi ini no-op.
+ */
+async function ensureWhistleblowerSheet(): Promise<void> {
+  const { sheetId } = getConfig();
+  const sheets = getSheetsClient("write");
+  const meta = await sheets.spreadsheets.get({
+    spreadsheetId: sheetId,
+    fields: "sheets.properties.title",
+  });
+  const exists = (meta.data.sheets ?? []).some(
+    (s) => s.properties?.title === WHISTLEBLOWER_SHEET_NAME,
+  );
+  if (exists) return;
+  await sheets.spreadsheets.batchUpdate({
+    spreadsheetId: sheetId,
+    requestBody: {
+      requests: [
+        {
+          addSheet: {
+            properties: {
+              title: WHISTLEBLOWER_SHEET_NAME,
+              gridProperties: {
+                rowCount: 1000,
+                columnCount: WHISTLEBLOWER_HEADERS.length,
+                frozenRowCount: 1,
+              },
+            },
+          },
+        },
+      ],
+    },
+  });
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: sheetId,
+    range: `${WHISTLEBLOWER_SHEET_NAME}!A1`,
+    valueInputOption: "RAW",
+    requestBody: { values: [WHISTLEBLOWER_HEADERS.slice()] },
+  });
+}
+
+function generateCaseId(now: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const y = now.getFullYear();
+  const m = pad(now.getMonth() + 1);
+  const d = pad(now.getDate());
+  // 4-char base36 random suffix, agar pendek tapi cukup unik untuk
+  // mencegah collision pada submission yang sangat dekat (per-detik).
+  const rand = Math.floor(Math.random() * 36 ** 4)
+    .toString(36)
+    .toUpperCase()
+    .padStart(4, "0");
+  return `WB-${y}${m}${d}-${rand}`;
+}
+
+/**
+ * Append satu baris laporan whistleblower ke tab "Whistleblower". Auto
+ * create tab kalau belum ada. Mengembalikan Case ID yang ter-generate.
+ */
+export async function appendWhistleblowerReport(
+  payload: WhistleblowerAppendPayload,
+): Promise<{ caseId: string; timestamp: string }> {
+  await ensureWhistleblowerSheet();
+  const { sheetId } = getConfig();
+  const sheets = getSheetsClient("write");
+  const now = new Date();
+  const isAnonim = payload.isAnonim === "Ya";
+  const timestamp = formatIndonesianTimestamp(now);
+  const caseId = generateCaseId(now);
+  const row = [
+    timestamp, // A
+    caseId, // B
+    payload.kategori, // C
+    payload.saudaraAdalah, // D
+    payload.unitKerja, // E
+    payload.pihakTerlibat ?? "", // F
+    payload.isAnonim, // G
+    isAnonim ? "" : (payload.nama ?? ""), // H
+    isAnonim ? "" : (payload.nim ?? ""), // I
+    isAnonim ? "" : (payload.kontak ?? ""), // J
+    payload.detail, // K
+    payload.kronologi ?? "", // L
+  ];
+  await sheets.spreadsheets.values.append({
+    spreadsheetId: sheetId,
+    range: `${WHISTLEBLOWER_SHEET_NAME}!A:L`,
+    valueInputOption: "USER_ENTERED",
+    insertDataOption: "INSERT_ROWS",
+    requestBody: { values: [row] },
+  });
+  return { caseId, timestamp };
+}
+
+export async function fetchWhistleblowerReports(): Promise<WhistleblowerRow[]> {
+  const { sheetId } = getConfig();
+  const sheets = getSheetsClient();
+  // Coba baca dengan asumsi sheet sudah ada.
+  try {
+    const res = await sheets.spreadsheets.values.get({
+      spreadsheetId: sheetId,
+      range: `${WHISTLEBLOWER_SHEET_NAME}!A:L`,
+      valueRenderOption: "FORMATTED_VALUE",
+    });
+    const values = (res.data.values as RawRow[] | undefined) ?? [];
+    if (values.length === 0) return [];
+    const [, ...rows] = values; // skip header
+    const out: WhistleblowerRow[] = [];
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i];
+      if (!r || r.every((c) => !c?.toString().trim())) continue;
+      const cell = (idx: number) => (r[idx] ?? "").toString().trim();
+      out.push({
+        rowIndex: i + 2,
+        timestamp: parseTimestamp(cell(0)),
+        caseId: cell(1),
+        kategori: cell(2),
+        saudaraAdalah: cell(3),
+        unitKerja: cell(4),
+        pihakTerlibat: cell(5),
+        isAnonim: cell(6),
+        nama: cell(7),
+        nim: cell(8),
+        kontak: cell(9),
+        detail: cell(10),
+        kronologi: cell(11),
+      });
+    }
+    return out;
+  } catch (err) {
+    // Sheet "Whistleblower" mungkin belum dibuat (belum pernah submit).
+    // Kembalikan list kosong supaya dashboard tetap bisa render.
+    const message = err instanceof Error ? err.message.toLowerCase() : "";
+    if (message.includes("unable to parse range") || message.includes("not found")) {
+      return [];
+    }
+    throw err;
+  }
+}
+
+export type WhistleblowerFilters = {
+  q?: string;
+  kategori?: string;
+  unit?: string;
+  mode?: "Ya" | "Tidak" | "all";
+  dateFrom?: string;
+  dateTo?: string;
+};
+
+export function applyWhistleblowerFilters(
+  rows: WhistleblowerRow[],
+  filters: WhistleblowerFilters,
+): WhistleblowerRow[] {
+  const q = filters.q?.toLowerCase().trim();
+  const from = filters.dateFrom ? Date.parse(filters.dateFrom) : NaN;
+  const to = filters.dateTo
+    ? Date.parse(filters.dateTo) + 24 * 60 * 60 * 1000 - 1
+    : NaN;
+  return rows.filter((r) => {
+    if (
+      filters.kategori &&
+      filters.kategori !== "all" &&
+      r.kategori !== filters.kategori
+    )
+      return false;
+    if (filters.unit && filters.unit !== "all" && r.unitKerja !== filters.unit)
+      return false;
+    if (filters.mode && filters.mode !== "all") {
+      const isAnonim = /ya|anonim/i.test(r.isAnonim);
+      const wantAnonim = filters.mode === "Ya";
+      if (isAnonim !== wantAnonim) return false;
+    }
+    if (!isNaN(from) || !isNaN(to)) {
+      const t = Date.parse(r.timestamp);
+      if (isNaN(t)) return false;
+      if (!isNaN(from) && t < from) return false;
+      if (!isNaN(to) && t > to) return false;
+    }
+    if (q) {
+      const haystack = [
+        r.caseId,
+        r.kategori,
+        r.saudaraAdalah,
+        r.unitKerja,
+        r.pihakTerlibat,
+        r.nama,
+        r.nim,
+        r.kontak,
+        r.detail,
+        r.kronologi,
+      ]
+        .join(" ")
+        .toLowerCase();
+      if (!haystack.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+export function computeWhistleblowerStats(
+  rows: WhistleblowerRow[],
+): WhistleblowerStats {
+  const perKategori: Record<string, number> = {};
+  const perUnit: Record<string, number> = {};
+  const perMonthMap = new Map<string, number>();
+  let anonim = 0;
+  for (const r of rows) {
+    const kat = r.kategori || "(tidak diisi)";
+    perKategori[kat] = (perKategori[kat] ?? 0) + 1;
+    const unit = r.unitKerja || "(tidak diisi)";
+    perUnit[unit] = (perUnit[unit] ?? 0) + 1;
+    if (/ya|anonim/i.test(r.isAnonim)) anonim++;
+    if (r.timestamp) {
+      const d = new Date(r.timestamp);
+      if (!isNaN(d.getTime())) {
+        const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+        perMonthMap.set(key, (perMonthMap.get(key) ?? 0) + 1);
+      }
+    }
+  }
+  const perMonth = Array.from(perMonthMap.entries())
+    .map(([month, count]) => ({ month, count }))
+    .sort((a, b) => a.month.localeCompare(b.month));
+  return {
+    total: rows.length,
+    anonim,
+    identitas: rows.length - anonim,
+    perKategori,
+    perUnit,
+    perMonth,
+  };
+}
+
 export function computeStats(rows: SubmissionRow[]): Stats {
   const perRole: Record<string, number> = {};
   const perUnit: Record<string, number> = {};
