@@ -1,6 +1,6 @@
 # Kotak Saran Elektronik — FEB Universitas Gajayana Malang
 
-Versi modern dari **Kotak Saran Elektronik Fakultas Ekonomi dan Bisnis Universitas Gajayana Malang**. UI di-rebuild dari nol dengan Next.js 14, Tailwind CSS, dan animasi modern. Semua masukan disimpan langsung ke **Google Spreadsheet** lewat Google Sheets API — satu sumber data untuk wizard publik (`/`) dan dashboard admin (`/report`).
+Versi modern dari **Kotak Saran Elektronik Fakultas Ekonomi dan Bisnis Universitas Gajayana Malang**. UI di-rebuild dari nol dengan Next.js 14, Tailwind CSS, dan animasi modern. Semua masukan disimpan langsung ke **Google Spreadsheet** lewat Google Sheets API — satu sumber data untuk wizard publik (`/`), dashboard admin (`/report`), dan saluran whistleblower (`/whistleblower`).
 
 ![hero](public/og.svg)
 
@@ -133,6 +133,71 @@ mengganti:
 
 Password tidak pernah masuk ke repo / git history. Jangan commit `.env.local`.
 
+## 📢 Saluran Whistleblower (`/whistleblower`)
+
+Saluran terpisah untuk **laporan pelanggaran serius** (korupsi, kekerasan,
+kecurangan akademik, dll). Disimpan di tab **`Whistleblower`** pada
+**spreadsheet yang sama** dengan kotak saran (env var `REPORT_SHEET_ID`).
+Tab dibuat otomatis oleh API saat laporan pertama masuk — tidak perlu setup
+manual di Google Sheets.
+
+### Perbedaan dengan kotak saran
+
+| Aspek | Kotak Saran (`/`) | Whistleblower (`/whistleblower`) |
+| --- | --- | --- |
+| Tujuan | Saran perbaikan layanan | Lapor pelanggaran (etik / hukum) |
+| Default privasi | Identitas | **Anonim** (direkomendasikan) |
+| Field tambahan | — | Kategori (wajib) + Pihak Terlibat (opsional) |
+| Tracking | — | **Case ID** `WB-YYYYMMDD-XXXX` |
+| Dashboard admin | `/report` | `/report/whistleblower` |
+| Tab spreadsheet | `Sheet1` (default) | `Whistleblower` (auto-create) |
+
+Login dashboard pakai **password yang sama** dengan `/report`
+(env var `REPORT_PASSWORD`). Tab navigasi di kepala halaman menjembatani
+keduanya.
+
+### Kategori pelanggaran (default)
+
+1. Korupsi/Gratifikasi
+2. Kekerasan/Pelecehan Seksual
+3. Kecurangan Akademik (plagiarisme/joki)
+4. Konflik Kepentingan
+5. Pelanggaran Tata Tertib Pegawai
+6. Lainnya
+
+Kategori dapat diubah di `src/lib/whistleblower-config.ts`
+(`WHISTLEBLOWER_CATEGORIES`).
+
+### Skema kolom tab `Whistleblower` (12 kolom A–L)
+
+| Kolom | Field |
+| --- | --- |
+| A | Timestamp |
+| B | Case ID (`WB-YYYYMMDD-XXXX`) |
+| C | Kategori |
+| D | Saudara adalah |
+| E | Unit kerja / Prodi |
+| F | Pihak Terlibat |
+| G | Apakah Anonim? (`Ya` / `Tidak`) |
+| H | Nama (jika identitas) |
+| I | NIM/NIP (jika identitas) |
+| J | Kontak (jika identitas) |
+| K | Detail Pelaporan |
+| L | Kronologi & Bukti |
+
+> Bila pelapor memilih **Anonim**, kolom H–J kosong. Detail (K) dan Kronologi
+> (L) tetap terisi tanpa peduli mode.
+
+### Case ID
+
+Setiap submission menghasilkan ID unik format `WB-YYYYMMDD-XXXX` (4 char
+base36 random). ID ditampilkan di halaman terima kasih. Pelapor diminta
+mencatat / menyalin ID untuk:
+
+- Follow-up status laporan via email pengelola.
+- Mengirim bukti pendukung (foto/dokumen) ke email pengelola dengan subject
+  yang menyebutkan Case ID.
+
 ## ☁️ Deploy ke Vercel
 
 1. Push repo ini ke GitHub.
@@ -159,30 +224,46 @@ Catatan: API route berjalan di Node.js Runtime karena memakai library
 src/
 ├─ app/
 │  ├─ api/
-│  │  ├─ saran/route.ts             # POST → append row ke Google Sheets
+│  │  ├─ saran/route.ts                 # POST kotak saran → append Sheet1
+│  │  ├─ whistleblower/route.ts         # POST whistleblower → tab Whistleblower
 │  │  └─ report/
-│  │     ├─ login/route.ts          # POST login + DELETE logout
-│  │     ├─ list/route.ts           # GET semua baris (cookie-protected)
-│  │     └─ export/route.ts         # GET CSV (cookie-protected)
+│  │     ├─ login/route.ts              # POST login + DELETE logout
+│  │     ├─ list/route.ts               # GET semua masukan saran
+│  │     ├─ export/route.ts             # GET CSV saran
+│  │     └─ whistleblower/
+│  │        ├─ list/route.ts            # GET semua laporan WB
+│  │        └─ export/route.ts          # GET CSV WB
 │  ├─ report/
-│  │  ├─ login/page.tsx             # Form login /report/login
-│  │  └─ page.tsx                   # Dashboard rekap (filter + stats + CSV)
-│  ├─ globals.css                   # Theme tokens & utilities
-│  ├─ layout.tsx                    # Root layout + ThemeProvider
-│  └─ page.tsx                      # Landing + form
+│  │  ├─ login/page.tsx                 # Form login /report/login
+│  │  ├─ page.tsx                       # Dashboard rekap saran
+│  │  └─ whistleblower/page.tsx         # Dashboard rekap WB
+│  ├─ whistleblower/
+│  │  ├─ page.tsx                       # Form publik laporan WB
+│  │  └─ terimakasih/page.tsx           # Halaman Case ID
+│  ├─ globals.css                       # Theme tokens & utilities
+│  ├─ layout.tsx                        # Root layout + ThemeProvider
+│  └─ page.tsx                          # Landing + form saran
 ├─ components/
-│  ├─ saran-form.tsx                # 4-step wizard (komponen utama)
+│  ├─ saran-form.tsx                    # 4-step wizard saran
+│  ├─ whistleblower-form.tsx            # Form WB (default anonim, disclaimer)
+│  ├─ case-id-copy.tsx                  # Tombol salin Case ID
+│  ├─ report/
+│  │  ├─ report-dashboard.tsx           # Dashboard saran
+│  │  ├─ whistleblower-dashboard.tsx    # Dashboard WB
+│  │  ├─ stat-card.tsx
+│  │  └─ breakdown-list.tsx
 │  ├─ progress-steps.tsx
 │  ├─ option-card.tsx
-│  ├─ theme-provider.tsx            # Light/Dark/System
+│  ├─ theme-provider.tsx                # Light/Dark/System
 │  ├─ theme-toggle.tsx
-│  ├─ brand-mark.tsx                # UNIGA emblem
-│  ├─ site-footer.tsx               # "Develop with ❤️ by weverx.com" footer
-│  └─ ui/{button,input,textarea,label}.tsx
+│  ├─ brand-mark.tsx                    # UNIGA emblem
+│  ├─ site-footer.tsx                   # "Develop with ❤️ by weverx.com" footer
+│  └─ ui/{button,input,textarea,label,select}.tsx
 └─ lib/
-   ├─ form-config.ts                # Opsi peran/unit + tipe payload
-   ├─ sheets.ts                     # Google Sheets API (read + append) + Indonesian date parsing
-   ├─ session.ts                    # HMAC cookie session helper
+   ├─ form-config.ts                    # Opsi peran/unit + tipe payload
+   ├─ whistleblower-config.ts           # Kategori WB + tipe payload
+   ├─ sheets.ts                         # Sheets API (read+append) saran & WB
+   ├─ auth.ts                           # HMAC cookie session helper
    └─ utils.ts
 ```
 

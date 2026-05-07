@@ -5,21 +5,21 @@ import { ArrowLeft, Inbox, ShieldAlert } from "lucide-react";
 import { BrandMark } from "@/components/brand-mark";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SiteFooter } from "@/components/site-footer";
-import { ReportDashboard } from "@/components/report/report-dashboard";
+import { WhistleblowerDashboard } from "@/components/report/whistleblower-dashboard";
 import { SESSION_COOKIE_NAME, verifySessionToken } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Rekap Masukan — Kotak Saran FEB UNIGA Malang",
+  title: "Rekap Whistleblower — FEB UNIGA Malang",
   description:
-    "Dashboard rekap masukan Kotak Saran Elektronik FEB Universitas Gajayana Malang.",
+    "Dashboard rekap laporan whistleblower FEB Universitas Gajayana Malang.",
 };
 
-export default function ReportPage() {
+export default function ReportWhistleblowerPage() {
   const session = cookies().get(SESSION_COOKIE_NAME)?.value;
   if (!verifySessionToken(session)) {
-    redirect("/report/login");
+    redirect("/report/login?next=/report/whistleblower");
   }
   return (
     <div className="relative min-h-screen overflow-x-hidden">
@@ -27,13 +27,9 @@ export default function ReportPage() {
         aria-hidden
         className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
       >
-        <div className="absolute -left-24 top-[-10%] h-[420px] w-[420px] rounded-full bg-primary/10 blur-3xl animate-blob" />
-        <div className="absolute -right-32 top-[10%] h-[420px] w-[420px] rounded-full bg-accent/10 blur-3xl animate-blob [animation-delay:-7s]" />
+        <div className="absolute -left-24 top-[-10%] h-[420px] w-[420px] rounded-full bg-rose-500/10 blur-3xl" />
+        <div className="absolute -right-32 top-[10%] h-[420px] w-[420px] rounded-full bg-slate-500/10 blur-3xl" />
       </div>
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 grid-bg opacity-30"
-      />
 
       <header className="container flex items-center justify-between py-5 sm:py-6">
         <div className="flex items-center gap-3">
@@ -43,17 +39,17 @@ export default function ReportPage() {
               FEB Universitas Gajayana Malang
             </span>
             <span className="text-sm font-semibold text-foreground sm:text-base">
-              Rekap Masukan
+              Rekap Whistleblower
             </span>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <Link
-            href="/"
+            href="/report"
             className="hidden items-center gap-1 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground sm:inline-flex"
           >
             <ArrowLeft className="h-4 w-4" />
-            Halaman utama
+            Rekap masukan
           </Link>
           <ThemeToggle />
         </div>
@@ -62,23 +58,23 @@ export default function ReportPage() {
       <main className="container pb-16 pt-2">
         {/* Tabs */}
         <nav className="mb-5 flex items-center gap-1 overflow-x-auto rounded-xl border border-border bg-card/60 p-1 text-sm">
-          <span
-            aria-current="page"
-            className="inline-flex items-center gap-2 whitespace-nowrap rounded-lg bg-primary px-3 py-2 font-medium text-primary-foreground shadow-sm"
+          <Link
+            href="/report"
+            className="inline-flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground"
           >
             <Inbox className="h-4 w-4" />
             Kotak Saran
-          </span>
-          <Link
-            href="/report/whistleblower"
-            className="inline-flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground"
+          </Link>
+          <span
+            aria-current="page"
+            className="inline-flex items-center gap-2 whitespace-nowrap rounded-lg bg-rose-600 px-3 py-2 font-medium text-white shadow-sm"
           >
             <ShieldAlert className="h-4 w-4" />
             Whistleblower
-          </Link>
+          </span>
         </nav>
 
-        <ReportDashboard />
+        <WhistleblowerDashboard />
       </main>
 
       <SiteFooter variant="compact" />

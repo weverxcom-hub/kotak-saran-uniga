@@ -1,8 +1,16 @@
+import Link from "next/link";
 import { SaranForm } from "@/components/saran-form";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { BrandMark } from "@/components/brand-mark";
 import { SiteFooter } from "@/components/site-footer";
-import { ShieldCheck, Sparkles, MessageSquareHeart, Lock } from "lucide-react";
+import {
+  ShieldCheck,
+  Sparkles,
+  MessageSquareHeart,
+  Lock,
+  ShieldAlert,
+  ArrowRight,
+} from "lucide-react";
 
 export default function Home() {
   return (
@@ -72,6 +80,15 @@ export default function Home() {
                 description="Tersimpan aman; akses dibatasi internal FEB UNIGA."
               />
             </div>
+
+            <Link
+              href="/whistleblower"
+              className="group inline-flex items-center gap-2 self-start rounded-xl border border-rose-300/60 bg-rose-50/80 px-4 py-2.5 text-sm font-medium text-rose-800 transition hover:border-rose-400 hover:bg-rose-100 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-100 dark:hover:bg-rose-500/20"
+            >
+              <ShieldAlert className="h-4 w-4" />
+              <span>Lapor pelanggaran serius (Whistleblower)</span>
+              <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
+            </Link>
           </section>
 
           {/* Right: form */}
