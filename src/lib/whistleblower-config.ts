@@ -9,7 +9,7 @@
  *    (lihat `lib/sheets.ts`).
  */
 
-import type { AnonimChoice, Role, Unit } from "@/lib/form-config";
+import type { AnonimChoice, Role } from "@/lib/form-config";
 
 export const WHISTLEBLOWER_CATEGORIES = [
   "Korupsi/Gratifikasi",
@@ -24,7 +24,10 @@ export type WhistleblowerCategory = (typeof WHISTLEBLOWER_CATEGORIES)[number];
 
 export type WhistleblowerPayload = {
   saudaraAdalah: Role | string;
-  unitKerja: Unit;
+  /** Fakultas yang dipilih. Untuk laporan tingkat fakultas, prodi boleh kosong. */
+  fakultas: string;
+  /** Prodi yang dipilih (opsional bila laporan tingkat fakultas saja). */
+  prodi?: string;
   kategori: WhistleblowerCategory;
   pihakTerlibat?: string;
   isAnonim: AnonimChoice;

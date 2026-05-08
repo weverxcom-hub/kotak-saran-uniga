@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { SITE_CONFIG } from "@/lib/site-config";
 import { cn } from "@/lib/utils";
 
 export function BrandMark({
@@ -15,11 +16,11 @@ export function BrandMark({
         className,
       )}
       style={{ width: size, height: size }}
-      aria-label="Universitas Gajayana Malang"
+      aria-label={SITE_CONFIG.universityName}
     >
       <Image
-        src="/img/uniga-logo.png"
-        alt="Logo Universitas Gajayana Malang"
+        src={SITE_CONFIG.logoPath}
+        alt={SITE_CONFIG.logoAlt}
         width={size}
         height={size}
         priority

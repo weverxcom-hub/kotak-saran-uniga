@@ -8,6 +8,17 @@ import {
   type SubmissionRow,
 } from "@/lib/sheets";
 import { SESSION_COOKIE_NAME, verifySessionToken } from "@/lib/auth";
+import { SITE_CONFIG } from "@/lib/site-config";
+
+/** Slug aman untuk filename CSV (lowercase, hanya a-z0-9-). */
+function slugify(input: string): string {
+  return input
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -67,7 +78,8 @@ export async function GET(req: Request) {
     const all = await fetchSubmissions();
     const filtered = applyFilters(all, filters);
     const csv = toCSV(filtered);
-    const fileName = `kotak-saran-feb-uniga-${new Date().toISOString().slice(0, 10)}.csv`;
+    const slug = slugify(SITE_CONFIG.universityShort) || "kotak-saran";
+    const fileName = `kotak-saran-${slug}-${new Date().toISOString().slice(0, 10)}.csv`;
     return new NextResponse(csv, {
       status: 200,
       headers: {

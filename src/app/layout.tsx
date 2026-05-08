@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
+import { SITE_CONFIG } from "@/lib/site-config";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -14,41 +15,42 @@ const SITE_URL =
   process.env.VERCEL_URL ||
   "https://kotak-saran.vercel.app";
 
+const TITLE = `Kotak Saran Elektronik — ${SITE_CONFIG.universityName}`;
+const DESCRIPTION = `Sampaikan masukan, saran, kritik, dan keluhan Anda terhadap layanan akademik, non-akademik, dan sarana prasarana ${SITE_CONFIG.universityName}. Identitas dijamin kerahasiaannya.`;
+const OG_TITLE = `Kotak Saran Elektronik ${SITE_CONFIG.universityShort}`;
+const OG_DESCRIPTION = `Suarakan masukan Anda untuk peningkatan kualitas layanan ${SITE_CONFIG.universityName}.`;
+
 export const metadata: Metadata = {
   metadataBase: new URL(
     SITE_URL.startsWith("http") ? SITE_URL : `https://${SITE_URL}`,
   ),
-  title:
-    "Kotak Saran Elektronik — Fakultas Ekonomi dan Bisnis Universitas Gajayana Malang",
-  description:
-    "Sampaikan masukan, saran, kritik, dan keluhan Anda terhadap layanan akademik, non-akademik, dan sarana prasarana FEB Universitas Gajayana Malang. Identitas dijamin kerahasiaannya.",
+  title: TITLE,
+  description: DESCRIPTION,
   keywords: [
     "kotak saran",
-    "FEB",
-    "Universitas Gajayana",
-    "UNIGA Malang",
+    "kotak saran universitas",
+    SITE_CONFIG.universityName,
+    SITE_CONFIG.universityShort,
     "keluhan",
     "saran mahasiswa",
   ],
-  authors: [{ name: "Fakultas Ekonomi dan Bisnis Universitas Gajayana Malang" }],
+  authors: [{ name: SITE_CONFIG.universityName }],
   icons: {
     icon: [{ url: "/favicon.ico", sizes: "any" }],
     apple: "/apple-touch-icon.png",
   },
   openGraph: {
-    title: "Kotak Saran Elektronik FEB UNIGA Malang",
-    description:
-      "Suarakan masukan Anda untuk peningkatan kualitas layanan FEB Universitas Gajayana Malang.",
+    title: OG_TITLE,
+    description: OG_DESCRIPTION,
     type: "website",
     locale: "id_ID",
-    images: [{ url: "/img/uniga-logo@2x.png", width: 440, height: 440 }],
+    images: [{ url: SITE_CONFIG.logoOgPath, width: 440, height: 440 }],
   },
   twitter: {
     card: "summary",
-    title: "Kotak Saran Elektronik FEB UNIGA Malang",
-    description:
-      "Suarakan masukan Anda untuk peningkatan kualitas layanan FEB Universitas Gajayana Malang.",
-    images: ["/img/uniga-logo@2x.png"],
+    title: OG_TITLE,
+    description: OG_DESCRIPTION,
+    images: [SITE_CONFIG.logoOgPath],
   },
 };
 

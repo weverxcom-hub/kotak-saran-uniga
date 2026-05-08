@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { BrandMark } from "@/components/brand-mark";
+import { SITE_CONFIG } from "@/lib/site-config";
 
 export default function ReportLoginPage() {
   return (
@@ -81,7 +82,7 @@ function LoginForm() {
             Panel Rekap Masukan
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Khusus pengelola FEB Universitas Gajayana Malang.
+            Khusus pengelola {SITE_CONFIG.universityName}.
           </p>
         </div>
 
@@ -140,8 +141,8 @@ function LoginForm() {
           </Button>
 
           <p className="text-center text-xs text-muted-foreground">
-            Akses dibatasi internal FEB. Hubungi pengelola sistem bila lupa
-            password.
+            Akses dibatasi internal {SITE_CONFIG.universityShort}. Hubungi
+            pengelola sistem bila lupa password.
           </p>
         </form>
 

@@ -1,19 +1,19 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Inbox, ShieldAlert } from "lucide-react";
+import { ArrowLeft, Inbox, ShieldAlert, Building2 } from "lucide-react";
 import { BrandMark } from "@/components/brand-mark";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SiteFooter } from "@/components/site-footer";
 import { ReportDashboard } from "@/components/report/report-dashboard";
 import { SESSION_COOKIE_NAME, verifySessionToken } from "@/lib/auth";
+import { SITE_CONFIG } from "@/lib/site-config";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Rekap Masukan — Kotak Saran FEB UNIGA Malang",
-  description:
-    "Dashboard rekap masukan Kotak Saran Elektronik FEB Universitas Gajayana Malang.",
+  title: `Rekap Masukan — Kotak Saran ${SITE_CONFIG.universityShort}`,
+  description: `Dashboard rekap masukan Kotak Saran Elektronik ${SITE_CONFIG.universityName}.`,
 };
 
 export default function ReportPage() {
@@ -40,7 +40,7 @@ export default function ReportPage() {
           <BrandMark size={42} />
           <div className="flex flex-col leading-tight">
             <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              FEB Universitas Gajayana Malang
+              {SITE_CONFIG.universityName}
             </span>
             <span className="text-sm font-semibold text-foreground sm:text-base">
               Rekap Masukan
@@ -75,6 +75,13 @@ export default function ReportPage() {
           >
             <ShieldAlert className="h-4 w-4" />
             Whistleblower
+          </Link>
+          <Link
+            href="/report/units"
+            className="inline-flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground"
+          >
+            <Building2 className="h-4 w-4" />
+            Kelola Unit / Prodi
           </Link>
         </nav>
 

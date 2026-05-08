@@ -1,28 +1,24 @@
 /**
- * Konfigurasi opsi form (peran, unit kerja) + tipe payload bersama.
+ * Konfigurasi opsi form (peran) + tipe payload bersama.
  *
- * Catatan: dulu file ini juga menyimpan ID Google Form + entry ID untuk
- * setiap field karena submission diteruskan ke Google Form. Sekarang
- * submission ditulis langsung ke Google Sheets (lihat `lib/sheets.ts`),
- * jadi entry ID tidak diperlukan lagi.
+ * Catatan: dulu file ini juga menyimpan UNIT_OPTIONS hardcoded
+ * (fakultas/prodi tertentu). Sekarang opsi unit/prodi disimpan secara
+ * dinamis di tab "Units" pada Google Spreadsheet — lihat
+ * `src/lib/units.ts` dan endpoint `/api/units`. Form publik akan
+ * fetch list ini dari server saat load.
  */
 
 export const ROLE_OPTIONS = ["DOSEN", "MAHASISWA", "TENDIK"] as const;
 export type Role = (typeof ROLE_OPTIONS)[number];
 
-export const UNIT_OPTIONS = [
-  "FAKULTAS EKONOMI DAN BISNIS",
-  "MANAJEMEN",
-  "AKUNTANSI",
-  "EKONOMI PEMBANGUNAN",
-] as const;
-export type Unit = (typeof UNIT_OPTIONS)[number];
-
 export type AnonimChoice = "Ya" | "Tidak";
 
 export type SuggestionPayload = {
   saudaraAdalah: Role | string;
-  unitKerja: Unit;
+  /** Fakultas yang dipilih. Untuk masukan tingkat fakultas, prodi boleh kosong. */
+  fakultas: string;
+  /** Prodi yang dipilih (opsional bila masukan tingkat fakultas saja). */
+  prodi?: string;
   isAnonim: AnonimChoice;
   nama?: string;
   nim?: string;

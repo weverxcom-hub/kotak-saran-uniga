@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { UNIT_OPTIONS } from "@/lib/form-config";
 import {
   WHISTLEBLOWER_CATEGORIES,
   type WhistleblowerPayload,
@@ -8,6 +7,11 @@ import {
   appendWhistleblowerReport,
   SheetsConfigError,
 } from "@/lib/sheets";
+import {
+  fetchActiveUnits,
+  formatUnitLabel,
+  isValidUnit,
+} from "@/lib/units";
 
 export const runtime = "nodejs";
 
@@ -15,7 +19,14 @@ function isString(v: unknown): v is string {
   return typeof v === "string";
 }
 
-function validate(input: unknown): WhistleblowerPayload | { error: string } {
+type ValidatedPayload = WhistleblowerPayload & {
+  /** Label gabungan "FAKULTAS — PRODI" untuk disimpan di kolom unitKerja. */
+  unitLabel: string;
+};
+
+async function validate(
+  input: unknown,
+): Promise<ValidatedPayload | { error: string }> {
   if (!input || typeof input !== "object") return { error: "Body tidak valid." };
   const body = input as Record<string, unknown>;
 
@@ -26,9 +37,37 @@ function validate(input: unknown): WhistleblowerPayload | { error: string } {
   if (saudaraAdalah.length > 100)
     return { error: "Field 'Saudara adalah' terlalu panjang." };
 
-  const unitKerja = isString(body.unitKerja) ? body.unitKerja.trim() : "";
-  if (!UNIT_OPTIONS.includes(unitKerja as (typeof UNIT_OPTIONS)[number])) {
-    return { error: "Unit kerja tidak valid." };
+  // Backward-compat: terima `unitKerja` (label gabungan) ATAU `fakultas` + `prodi`.
+  let fakultas = isString(body.fakultas) ? body.fakultas.trim() : "";
+  let prodi = isString(body.prodi) ? body.prodi.trim() : "";
+  if (!fakultas && isString(body.unitKerja)) {
+    const label = body.unitKerja.trim();
+    const sep = label.indexOf(" — ");
+    if (sep > 0) {
+      fakultas = label.slice(0, sep).trim();
+      prodi = label.slice(sep + 3).trim();
+    } else {
+      fakultas = label;
+      prodi = "";
+    }
+  }
+  if (!fakultas) return { error: "Fakultas wajib dipilih." };
+
+  let units;
+  try {
+    units = await fetchActiveUnits();
+  } catch (err) {
+    if (err instanceof SheetsConfigError) throw err;
+    return {
+      error:
+        "Gagal memvalidasi unit / prodi. Coba lagi sebentar atau hubungi pengelola.",
+    };
+  }
+  if (!isValidUnit(units, fakultas, prodi || undefined)) {
+    return {
+      error:
+        "Kombinasi Fakultas / Prodi tidak ada di daftar resmi. Mohon pilih dari daftar.",
+    };
   }
 
   const kategori = isString(body.kategori) ? body.kategori.trim() : "";
@@ -76,7 +115,9 @@ function validate(input: unknown): WhistleblowerPayload | { error: string } {
 
   return {
     saudaraAdalah,
-    unitKerja: unitKerja as (typeof UNIT_OPTIONS)[number],
+    fakultas,
+    prodi: prodi || undefined,
+    unitLabel: formatUnitLabel(fakultas, prodi),
     kategori: kategori as (typeof WHISTLEBLOWER_CATEGORIES)[number],
     pihakTerlibat: pihakTerlibat || undefined,
     isAnonim,
@@ -96,7 +137,23 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "JSON tidak valid." }, { status: 400 });
   }
 
-  const validated = validate(json);
+  let validated: ValidatedPayload | { error: string };
+  try {
+    validated = await validate(json);
+  } catch (err) {
+    if (err instanceof SheetsConfigError) {
+      return NextResponse.json(
+        {
+          error:
+            err.message +
+            " Hubungi pengelola sistem untuk konfigurasi spreadsheet.",
+        },
+        { status: 500 },
+      );
+    }
+    const message = err instanceof Error ? err.message : "Validasi gagal.";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
   if ("error" in validated) {
     return NextResponse.json({ error: validated.error }, { status: 400 });
   }
@@ -104,7 +161,7 @@ export async function POST(req: Request) {
   try {
     const { caseId, timestamp } = await appendWhistleblowerReport({
       saudaraAdalah: validated.saudaraAdalah,
-      unitKerja: validated.unitKerja,
+      unitKerja: validated.unitLabel,
       kategori: validated.kategori,
       pihakTerlibat: validated.pihakTerlibat,
       isAnonim: validated.isAnonim,

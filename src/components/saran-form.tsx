@@ -10,10 +10,6 @@ import {
   GraduationCap,
   Briefcase,
   Users,
-  Building2,
-  Calculator,
-  TrendingUp,
-  ScrollText,
   Send,
   Loader2,
   CheckCircle2,
@@ -26,34 +22,44 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 import { OptionCard } from "@/components/option-card";
 import { ProgressSteps, type Step } from "@/components/progress-steps";
 import {
   ROLE_OPTIONS,
-  UNIT_OPTIONS,
   type AnonimChoice,
   type SuggestionPayload,
 } from "@/lib/form-config";
+import { SITE_CONFIG } from "@/lib/site-config";
 import { cn } from "@/lib/utils";
 
 const ROLE_META: Record<string, { icon: React.ElementType; description: string }> = {
-  DOSEN: { icon: GraduationCap, description: "Pengajar / dosen tetap maupun tidak tetap" },
-  MAHASISWA: { icon: Users, description: "Mahasiswa aktif FEB UNIGA" },
-  TENDIK: { icon: Briefcase, description: "Tenaga kependidikan / staf" },
+  DOSEN: {
+    icon: GraduationCap,
+    description: "Pengajar / dosen tetap maupun tidak tetap",
+  },
+  MAHASISWA: {
+    icon: Users,
+    description: `Mahasiswa aktif ${SITE_CONFIG.universityShort}`,
+  },
+  TENDIK: {
+    icon: Briefcase,
+    description: "Tenaga kependidikan / staf",
+  },
 };
 
-const UNIT_META: Record<string, { icon: React.ElementType; description: string }> = {
-  "FAKULTAS EKONOMI DAN BISNIS": {
-    icon: Building2,
-    description: "Layanan tingkat fakultas",
-  },
-  MANAJEMEN: { icon: TrendingUp, description: "Program Studi Manajemen" },
-  AKUNTANSI: { icon: Calculator, description: "Program Studi Akuntansi" },
-  "EKONOMI PEMBANGUNAN": {
-    icon: ScrollText,
-    description: "Program Studi Ekonomi Pembangunan",
-  },
+type UnitGroup = {
+  fakultas: string;
+  /** True bila fakultas ini juga punya entri level fakultas (prodi kosong). */
+  hasFacultyLevel: boolean;
+  /** Daftar prodi (tanpa entri level fakultas). */
+  prodi: string[];
 };
+
+type UnitsLoadState =
+  | { kind: "loading" }
+  | { kind: "ready"; groups: UnitGroup[] }
+  | { kind: "error"; message: string };
 
 const STEPS: Step[] = [
   { id: 1, title: "Tentang Anda" },
@@ -65,7 +71,8 @@ const STEPS: Step[] = [
 type FormState = {
   saudaraAdalah: string;
   saudaraOther: string;
-  unitKerja: string;
+  fakultas: string;
+  prodi: string;
   isAnonim: AnonimChoice | "";
   nama: string;
   nim: string;
@@ -77,7 +84,8 @@ type FormState = {
 const INITIAL_STATE: FormState = {
   saudaraAdalah: "",
   saudaraOther: "",
-  unitKerja: "",
+  fakultas: "",
+  prodi: "",
   isAnonim: "",
   nama: "",
   nim: "",
@@ -92,14 +100,58 @@ type SubmitStatus =
   | { kind: "success" }
   | { kind: "error"; message: string };
 
+const PRODI_FACULTY_LEVEL_VALUE = "__faculty__";
+
 export function SaranForm() {
   const [step, setStep] = React.useState(1);
   const [state, setState] = React.useState<FormState>(INITIAL_STATE);
   const [status, setStatus] = React.useState<SubmitStatus>({ kind: "idle" });
+  const [units, setUnits] = React.useState<UnitsLoadState>({ kind: "loading" });
   const containerRef = React.useRef<HTMLDivElement>(null);
+
+  // Fetch daftar fakultas + prodi dari /api/units saat mount.
+  React.useEffect(() => {
+    let alive = true;
+    const load = async () => {
+      try {
+        const res = await fetch("/api/units", { cache: "no-store" });
+        const data = (await res.json().catch(() => null)) as
+          | { groups?: UnitGroup[]; error?: string }
+          | null;
+        if (!alive) return;
+        if (!res.ok) {
+          setUnits({
+            kind: "error",
+            message: data?.error ?? `Gagal memuat unit (${res.status}).`,
+          });
+          return;
+        }
+        setUnits({ kind: "ready", groups: data?.groups ?? [] });
+      } catch (err) {
+        if (!alive) return;
+        setUnits({
+          kind: "error",
+          message:
+            err instanceof Error ? err.message : "Gagal memuat unit.",
+        });
+      }
+    };
+    void load();
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const update = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setState((s) => ({ ...s, [key]: value }));
+
+  const setFakultas = (fakultas: string) =>
+    setState((s) => ({ ...s, fakultas, prodi: "" }));
+
+  const selectedGroup =
+    units.kind === "ready"
+      ? units.groups.find((g) => g.fakultas === state.fakultas)
+      : undefined;
 
   const canProceed = (s: number): { ok: boolean; message?: string } => {
     if (s === 1) {
@@ -107,8 +159,12 @@ export function SaranForm() {
         ? state.saudaraOther.trim()
         : state.saudaraAdalah;
       if (!role) return { ok: false, message: "Pilih peran Anda terlebih dulu." };
-      if (!state.unitKerja)
-        return { ok: false, message: "Pilih unit kerja / prodi Anda." };
+      if (!state.fakultas)
+        return { ok: false, message: "Pilih fakultas Anda." };
+      const group = selectedGroup;
+      const requireProdi = group ? !group.hasFacultyLevel : true;
+      if (requireProdi && !state.prodi)
+        return { ok: false, message: "Pilih program studi Anda." };
     }
     if (s === 2) {
       if (!state.isAnonim)
@@ -152,7 +208,8 @@ export function SaranForm() {
         : state.saudaraAdalah;
     const payload: SuggestionPayload = {
       saudaraAdalah: finalRole,
-      unitKerja: state.unitKerja as SuggestionPayload["unitKerja"],
+      fakultas: state.fakultas,
+      prodi: state.prodi || undefined,
       isAnonim: state.isAnonim || "Tidak",
       nama: state.isAnonim === "Tidak" ? state.nama.trim() : undefined,
       nim: state.isAnonim === "Tidak" ? state.nim.trim() || undefined : undefined,
@@ -209,7 +266,15 @@ export function SaranForm() {
           key={step}
           className="animate-fade-in-up px-5 py-6 sm:px-8 sm:py-8"
         >
-          {step === 1 ? <StepTentangAnda state={state} update={update} /> : null}
+          {step === 1 ? (
+            <StepTentangAnda
+              state={state}
+              update={update}
+              setFakultas={setFakultas}
+              units={units}
+              selectedGroup={selectedGroup}
+            />
+          ) : null}
           {step === 2 ? <StepPrivasi state={state} update={update} /> : null}
           {step === 3 ? <StepMasukan state={state} update={update} /> : null}
           {step === 4 ? <StepTinjau state={state} /> : null}
@@ -302,9 +367,15 @@ function SectionTitle({
 function StepTentangAnda({
   state,
   update,
+  setFakultas,
+  units,
+  selectedGroup,
 }: {
   state: FormState;
   update: <K extends keyof FormState>(key: K, value: FormState[K]) => void;
+  setFakultas: (fakultas: string) => void;
+  units: UnitsLoadState;
+  selectedGroup: UnitGroup | undefined;
 }) {
   return (
     <div className="space-y-7">
@@ -356,25 +427,102 @@ function StepTentangAnda({
 
       <div>
         <Label className="mb-3 block">
-          Unit kerja atau program studi Anda{" "}
+          Unit kerja / Program studi Anda{" "}
           <span className="text-destructive">*</span>
         </Label>
-        <div className="grid gap-2 sm:grid-cols-2">
-          {UNIT_OPTIONS.map((unit) => {
-            const meta = UNIT_META[unit];
-            const Icon = meta?.icon ?? Building2;
-            return (
-              <OptionCard
-                key={unit}
-                label={unit}
-                description={meta?.description}
-                icon={<Icon className="h-5 w-5" />}
-                selected={state.unitKerja === unit}
-                onClick={() => update("unitKerja", unit)}
-              />
-            );
-          })}
-        </div>
+
+        {units.kind === "loading" ? (
+          <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2.5 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> Memuat daftar
+            fakultas…
+          </div>
+        ) : units.kind === "error" ? (
+          <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>{units.message}</span>
+          </div>
+        ) : units.groups.length === 0 ? (
+          <div className="flex items-start gap-2 rounded-lg border border-amber-300/40 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>
+              Belum ada daftar unit. Hubungi pengelola untuk mengisi tab{" "}
+              <strong>Units</strong> di spreadsheet.
+            </span>
+          </div>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <Label
+                htmlFor="form-fakultas"
+                className="mb-1.5 block text-xs font-medium text-muted-foreground"
+              >
+                Fakultas <span className="text-destructive">*</span>
+              </Label>
+              <Select
+                id="form-fakultas"
+                value={state.fakultas}
+                onChange={(e) => setFakultas(e.target.value)}
+              >
+                <option value="">— Pilih fakultas —</option>
+                {units.groups.map((g) => (
+                  <option key={g.fakultas} value={g.fakultas}>
+                    {g.fakultas}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div>
+              <Label
+                htmlFor="form-prodi"
+                className="mb-1.5 block text-xs font-medium text-muted-foreground"
+              >
+                Program studi{" "}
+                {selectedGroup?.hasFacultyLevel ? (
+                  <span className="font-normal text-muted-foreground">
+                    (boleh tingkat fakultas)
+                  </span>
+                ) : (
+                  <span className="text-destructive">*</span>
+                )}
+              </Label>
+              <Select
+                id="form-prodi"
+                value={
+                  state.prodi ||
+                  (selectedGroup?.hasFacultyLevel && state.fakultas
+                    ? PRODI_FACULTY_LEVEL_VALUE
+                    : "")
+                }
+                onChange={(e) => {
+                  const v = e.target.value;
+                  update(
+                    "prodi",
+                    v === PRODI_FACULTY_LEVEL_VALUE ? "" : v,
+                  );
+                }}
+                disabled={!state.fakultas}
+              >
+                {!state.fakultas ? (
+                  <option value="">— Pilih fakultas dulu —</option>
+                ) : (
+                  <>
+                    <option value="">— Pilih prodi —</option>
+                    {selectedGroup?.hasFacultyLevel ? (
+                      <option value={PRODI_FACULTY_LEVEL_VALUE}>
+                        (Tingkat fakultas saja)
+                      </option>
+                    ) : null}
+                    {(selectedGroup?.prodi ?? []).map((p) => (
+                      <option key={p} value={p}>
+                        {p}
+                      </option>
+                    ))}
+                  </>
+                )}
+              </Select>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -398,7 +546,7 @@ function StepPrivasi({
       <div className="grid gap-3 sm:grid-cols-2">
         <OptionCard
           label="Tetap dengan identitas saya"
-          description="Tim FEB dapat menghubungi balik untuk klarifikasi atau update tindak lanjut."
+          description={`Tim ${SITE_CONFIG.universityShort} dapat menghubungi balik untuk klarifikasi atau update tindak lanjut.`}
           icon={<Eye className="h-5 w-5" />}
           selected={state.isAnonim === "Tidak"}
           onClick={() => update("isAnonim", "Tidak")}
@@ -455,9 +603,9 @@ function StepPrivasi({
           <div className="space-y-1">
             <p className="font-medium">Mode anonim aktif</p>
             <p className="text-muted-foreground">
-              Nama dan NIM tidak akan diminta. Namun kami tetap menghargai jika Anda
-              menyertakan kontak (opsional) di langkah berikutnya untuk konfirmasi
-              tindak lanjut tanpa membongkar identitas.
+              Nama dan NIM tidak akan diminta. Namun kami tetap menghargai
+              jika Anda menyertakan kontak (opsional) di langkah berikutnya
+              untuk konfirmasi tindak lanjut tanpa membongkar identitas.
             </p>
           </div>
         </div>
@@ -480,7 +628,7 @@ function StepMasukan({
       <SectionTitle
         icon={<Send className="h-3.5 w-3.5" />}
         title="Sampaikan masukan Anda"
-        description="Tuliskan masukan, saran, kritik, atau keluhan terkait layanan akademik, non-akademik, dan sarana prasarana FEB UNIGA."
+        description={`Tuliskan masukan, saran, kritik, atau keluhan terkait layanan akademik, non-akademik, dan sarana prasarana ${SITE_CONFIG.universityShort}.`}
       />
 
       <div>
@@ -530,7 +678,7 @@ function StepMasukan({
 
       <div>
         <Label htmlFor="kontak" className="mb-1.5 block">
-          Nomor HP / WA untuk konfirmasi prodi{" "}
+          Nomor HP / WA untuk konfirmasi tindak lanjut{" "}
           <span className="text-muted-foreground font-normal">(opsional)</span>
         </Label>
         <Input
@@ -550,9 +698,12 @@ function StepMasukan({
 function StepTinjau({ state }: { state: FormState }) {
   const role =
     state.saudaraAdalah === "Other" ? state.saudaraOther : state.saudaraAdalah;
+  const unitLabel = state.prodi
+    ? `${state.fakultas} — ${state.prodi}`
+    : state.fakultas;
   const items: Array<{ label: string; value?: string }> = [
     { label: "Saudara adalah", value: role },
-    { label: "Unit kerja / prodi", value: state.unitKerja },
+    { label: "Unit kerja / prodi", value: unitLabel },
     { label: "Mode", value: state.isAnonim === "Ya" ? "Anonim" : "Identitas" },
   ];
   if (state.isAnonim === "Tidak") {
@@ -560,7 +711,8 @@ function StepTinjau({ state }: { state: FormState }) {
     if (state.nim) items.push({ label: "NIM / NIDN / NIS", value: state.nim });
   }
   items.push({ label: "Masukan", value: state.masukan });
-  if (state.kronologi) items.push({ label: "Kronologi", value: state.kronologi });
+  if (state.kronologi)
+    items.push({ label: "Kronologi", value: state.kronologi });
   if (state.kontak) items.push({ label: "Kontak", value: state.kontak });
 
   return (
@@ -568,7 +720,7 @@ function StepTinjau({ state }: { state: FormState }) {
       <SectionTitle
         icon={<CheckCircle2 className="h-3.5 w-3.5" />}
         title="Tinjau dan kirim"
-        description="Periksa kembali ringkasan masukan Anda. Setelah dikirim, data akan tercatat di sistem FEB UNIGA Malang."
+        description={`Periksa kembali ringkasan masukan Anda. Setelah dikirim, data akan tercatat di sistem ${SITE_CONFIG.universityShort}.`}
       />
 
       <ul className="divide-y divide-border rounded-xl border border-border bg-background">
@@ -590,9 +742,11 @@ function StepTinjau({ state }: { state: FormState }) {
       <div className="flex items-start gap-3 rounded-xl border border-success/30 bg-success/[0.07] p-4 text-sm text-foreground">
         <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-success" />
         <p className="text-muted-foreground">
-          Dengan menekan tombol <span className="font-medium text-foreground">Kirim Masukan</span>,
-          Anda menyatakan bahwa informasi yang disampaikan benar adanya dan dapat
-          digunakan oleh FEB UNIGA Malang sebagai dasar peningkatan kualitas layanan.
+          Dengan menekan tombol{" "}
+          <span className="font-medium text-foreground">Kirim Masukan</span>,
+          Anda menyatakan bahwa informasi yang disampaikan benar adanya dan
+          dapat digunakan oleh {SITE_CONFIG.universityName} sebagai dasar
+          peningkatan kualitas layanan.
         </p>
       </div>
     </div>
@@ -619,8 +773,8 @@ function SuccessScreen({
         <span className="font-medium text-foreground">
           {state.isAnonim === "Ya" ? "responden anonim" : state.nama || "Anda"}
         </span>{" "}
-        sudah kami terima dan akan menjadi pertimbangan dalam peningkatan kualitas
-        layanan Fakultas Ekonomi dan Bisnis Universitas Gajayana Malang.
+        sudah kami terima dan akan menjadi pertimbangan dalam peningkatan
+        kualitas layanan {SITE_CONFIG.universityName}.
       </p>
 
       <div className="mt-8 flex flex-col items-center justify-center gap-2 sm:flex-row sm:gap-3">
