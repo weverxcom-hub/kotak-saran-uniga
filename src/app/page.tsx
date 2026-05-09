@@ -49,7 +49,7 @@ export default function Home() {
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:gap-16">
           {/* Left: hero */}
           <section className="flex flex-col justify-center space-y-6">
-            <div className="inline-flex w-fit items-center gap-2 rounded-full border border-primary/20 bg-primary/[0.06] px-3 py-1 text-xs font-medium text-primary">
+            <div className="inline-flex w-fit items-center gap-2 rounded-full border border-accent/40 bg-accent/15 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-accent-foreground dark:bg-accent/20 dark:text-accent">
               <Sparkles className="h-3.5 w-3.5" />
               {SITE_CONFIG.tagline}
             </div>
