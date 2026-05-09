@@ -23,10 +23,24 @@ import { Select } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { StatCard } from "@/components/report/stat-card";
 import { BreakdownList } from "@/components/report/breakdown-list";
-import { UNIT_OPTIONS } from "@/lib/form-config";
 import { WHISTLEBLOWER_CATEGORIES } from "@/lib/whistleblower-config";
 import type { WhistleblowerRow, WhistleblowerStats } from "@/lib/sheets";
 import { cn } from "@/lib/utils";
+
+type UnitGroup = {
+  fakultas: string;
+  hasFacultyLevel: boolean;
+  prodi: string[];
+};
+
+function flattenUnitOptions(groups: UnitGroup[]): string[] {
+  const out: string[] = [];
+  for (const g of groups) {
+    if (g.hasFacultyLevel) out.push(g.fakultas);
+    for (const p of g.prodi) out.push(`${g.fakultas} — ${p}`);
+  }
+  return out;
+}
 
 type Filters = {
   q: string;
@@ -94,6 +108,25 @@ export function WhistleblowerDashboard() {
   const [pendingQ, setPendingQ] = React.useState("");
   const [load, setLoad] = React.useState<LoadState>({ kind: "idle" });
   const [openRow, setOpenRow] = React.useState<string | null>(null);
+  const [unitOptions, setUnitOptions] = React.useState<string[]>([]);
+
+  React.useEffect(() => {
+    let alive = true;
+    void (async () => {
+      try {
+        const res = await fetch("/api/units", { cache: "no-store" });
+        if (!res.ok) return;
+        const data = (await res.json()) as { groups?: UnitGroup[] };
+        if (!alive) return;
+        setUnitOptions(flattenUnitOptions(data.groups ?? []));
+      } catch {
+        // diam saja — filter unit tetap menampilkan "Semua".
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   React.useEffect(() => {
     const t = setTimeout(() => {
@@ -311,7 +344,7 @@ export function WhistleblowerDashboard() {
               }
             >
               <option value="all">Semua</option>
-              {UNIT_OPTIONS.map((u) => (
+              {unitOptions.map((u) => (
                 <option key={u} value={u}>
                   {u}
                 </option>

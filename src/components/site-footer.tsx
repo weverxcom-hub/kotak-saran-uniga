@@ -1,4 +1,5 @@
 import { Heart } from "lucide-react";
+import { SITE_CONFIG } from "@/lib/site-config";
 import { cn } from "@/lib/utils";
 
 export function SiteFooter({
@@ -20,12 +21,11 @@ export function SiteFooter({
         {variant === "full" ? (
           <>
             <p>
-              © {year} Fakultas Ekonomi dan Bisnis · Universitas Gajayana
-              Malang
+              © {year} {SITE_CONFIG.universityName}
             </p>
             <p>
-              Versi modern dari Kotak Saran Elektronik resmi · data tetap
-              tercatat pada sistem terpusat FEB.
+              Kotak Saran Elektronik tingkat universitas · data tetap tercatat
+              pada sistem terpusat {SITE_CONFIG.universityShort}.
             </p>
           </>
         ) : null}

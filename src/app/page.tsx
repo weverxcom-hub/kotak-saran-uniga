@@ -3,6 +3,7 @@ import { SaranForm } from "@/components/saran-form";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { BrandMark } from "@/components/brand-mark";
 import { SiteFooter } from "@/components/site-footer";
+import { SITE_CONFIG } from "@/lib/site-config";
 import {
   ShieldCheck,
   Sparkles,
@@ -34,7 +35,7 @@ export default function Home() {
           <BrandMark size={42} />
           <div className="hidden flex-col leading-tight sm:flex">
             <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              FEB Universitas Gajayana Malang
+              {SITE_CONFIG.universityName}
             </span>
             <span className="text-sm font-semibold text-foreground">
               Kotak Saran Elektronik
@@ -50,23 +51,23 @@ export default function Home() {
           <section className="flex flex-col justify-center space-y-6">
             <div className="inline-flex w-fit items-center gap-2 rounded-full border border-primary/20 bg-primary/[0.06] px-3 py-1 text-xs font-medium text-primary">
               <Sparkles className="h-3.5 w-3.5" />
-              Versi modern dari kotak saran resmi
+              {SITE_CONFIG.tagline}
             </div>
             <h1 className="text-balance text-3xl font-semibold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
               Suarakan masukan Anda untuk{" "}
-              <span className="gradient-text">FEB UNIGA Malang</span>.
+              <span className="gradient-text">{SITE_CONFIG.universityShort}</span>.
             </h1>
             <p className="max-w-xl text-pretty text-base text-muted-foreground sm:text-lg">
-              Kotak Saran Elektronik resmi Fakultas Ekonomi dan Bisnis Universitas
-              Gajayana Malang. Sampaikan masukan, saran, kritik, atau keluhan
-              terhadap layanan akademik, non-akademik, dan sarana prasarana
-              pendukung. Identitas Anda dijamin kerahasiaannya.
+              Kotak Saran Elektronik resmi {SITE_CONFIG.universityName}.
+              Sampaikan masukan, saran, kritik, atau keluhan terhadap layanan
+              akademik, non-akademik, dan sarana prasarana pendukung di seluruh
+              fakultas dan unit. Identitas Anda dijamin kerahasiaannya.
             </p>
 
             <div className="grid gap-3 sm:max-w-md">
               <Highlight
                 icon={<MessageSquareHeart className="h-4 w-4" />}
-                title="Setiap masukan dikaji oleh tim FEB"
+                title={`Setiap masukan dikaji oleh tim ${SITE_CONFIG.universityShort}`}
                 description="Bahan dasar perbaikan kualitas layanan."
               />
               <Highlight
@@ -77,7 +78,7 @@ export default function Home() {
               <Highlight
                 icon={<ShieldCheck className="h-4 w-4" />}
                 title="Kerahasiaan terjamin"
-                description="Tersimpan aman; akses dibatasi internal FEB UNIGA."
+                description={`Tersimpan aman; akses dibatasi internal ${SITE_CONFIG.universityShort}.`}
               />
             </div>
 

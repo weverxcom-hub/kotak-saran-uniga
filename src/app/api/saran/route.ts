@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
-import { ROLE_OPTIONS, UNIT_OPTIONS, type SuggestionPayload } from "@/lib/form-config";
+import { ROLE_OPTIONS, type SuggestionPayload } from "@/lib/form-config";
 import { appendSubmission, SheetsConfigError } from "@/lib/sheets";
+import {
+  fetchActiveUnits,
+  formatUnitLabel,
+  isValidUnit,
+} from "@/lib/units";
 
 export const runtime = "nodejs";
 
@@ -8,7 +13,14 @@ function isString(v: unknown): v is string {
   return typeof v === "string";
 }
 
-function validate(input: unknown): SuggestionPayload | { error: string } {
+type ValidatedPayload = SuggestionPayload & {
+  /** Label gabungan "FAKULTAS — PRODI" untuk disimpan di kolom unitKerja. */
+  unitLabel: string;
+};
+
+async function validate(
+  input: unknown,
+): Promise<ValidatedPayload | { error: string }> {
   if (!input || typeof input !== "object") return { error: "Body tidak valid." };
   const body = input as Record<string, unknown>;
 
@@ -16,13 +28,44 @@ function validate(input: unknown): SuggestionPayload | { error: string } {
     ? body.saudaraAdalah.trim()
     : "";
   if (!saudaraAdalah) return { error: "Field 'Saudara adalah' wajib diisi." };
+  if (saudaraAdalah.length > 100)
+    return { error: "Field 'Saudara adalah' terlalu panjang." };
 
-  const unitKerja = isString(body.unitKerja) ? body.unitKerja.trim() : "";
-  if (!UNIT_OPTIONS.includes(unitKerja as (typeof UNIT_OPTIONS)[number])) {
-    return { error: "Unit kerja tidak valid." };
+  // Backward-compat: terima `unitKerja` (label gabungan) ATAU `fakultas` + `prodi`.
+  let fakultas = isString(body.fakultas) ? body.fakultas.trim() : "";
+  let prodi = isString(body.prodi) ? body.prodi.trim() : "";
+  if (!fakultas && isString(body.unitKerja)) {
+    const label = body.unitKerja.trim();
+    const sep = label.indexOf(" — ");
+    if (sep > 0) {
+      fakultas = label.slice(0, sep).trim();
+      prodi = label.slice(sep + 3).trim();
+    } else {
+      fakultas = label;
+      prodi = "";
+    }
+  }
+  if (!fakultas) return { error: "Fakultas wajib dipilih." };
+
+  let units;
+  try {
+    units = await fetchActiveUnits();
+  } catch (err) {
+    if (err instanceof SheetsConfigError) throw err;
+    return {
+      error:
+        "Gagal memvalidasi unit / prodi. Coba lagi sebentar atau hubungi pengelola.",
+    };
+  }
+  if (!isValidUnit(units, fakultas, prodi || undefined)) {
+    return {
+      error:
+        "Kombinasi Fakultas / Prodi tidak ada di daftar resmi. Mohon pilih dari daftar.",
+    };
   }
 
-  const isAnonim = body.isAnonim === "Ya" ? "Ya" : body.isAnonim === "Tidak" ? "Tidak" : null;
+  const isAnonim =
+    body.isAnonim === "Ya" ? "Ya" : body.isAnonim === "Tidak" ? "Tidak" : null;
   if (!isAnonim) return { error: "Pilihan anonim wajib diisi." };
 
   const masukan = isString(body.masukan) ? body.masukan.trim() : "";
@@ -42,25 +85,27 @@ function validate(input: unknown): SuggestionPayload | { error: string } {
     return { error: "Nama wajib diisi jika tidak anonim." };
   }
 
-  // Sanity checks
   if (nama.length > 200) return { error: "Nama terlalu panjang." };
   if (nim.length > 60) return { error: "NIM/NIDN/NIS terlalu panjang." };
   if (kronologi.length > 5000)
     return { error: "Kronologi terlalu panjang (maks 5000 karakter)." };
   if (kontak.length > 60) return { error: "Nomor kontak terlalu panjang." };
 
-  // Allow free-text saudaraAdalah selain ROLE_OPTIONS (sesuai semula).
+  // saudaraAdalah boleh free-text di luar ROLE_OPTIONS — void supaya tree-shake
+  // tidak buang import.
   void ROLE_OPTIONS;
 
   return {
     saudaraAdalah,
-    unitKerja: unitKerja as (typeof UNIT_OPTIONS)[number],
+    fakultas,
+    prodi: prodi || undefined,
+    unitLabel: formatUnitLabel(fakultas, prodi),
     isAnonim,
-    nama,
-    nim,
+    nama: nama || undefined,
+    nim: nim || undefined,
     masukan,
-    kronologi,
-    kontak,
+    kronologi: kronologi || undefined,
+    kontak: kontak || undefined,
   };
 }
 
@@ -72,7 +117,23 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "JSON tidak valid." }, { status: 400 });
   }
 
-  const validated = validate(json);
+  let validated: ValidatedPayload | { error: string };
+  try {
+    validated = await validate(json);
+  } catch (err) {
+    if (err instanceof SheetsConfigError) {
+      return NextResponse.json(
+        {
+          error:
+            err.message +
+            " Hubungi pengelola sistem untuk konfigurasi spreadsheet.",
+        },
+        { status: 500 },
+      );
+    }
+    const message = err instanceof Error ? err.message : "Validasi gagal.";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
   if ("error" in validated) {
     return NextResponse.json({ error: validated.error }, { status: 400 });
   }
@@ -80,7 +141,7 @@ export async function POST(req: Request) {
   try {
     await appendSubmission({
       saudaraAdalah: validated.saudaraAdalah,
-      unitKerja: validated.unitKerja,
+      unitKerja: validated.unitLabel,
       isAnonim: validated.isAnonim,
       nama: validated.nama,
       nim: validated.nim,

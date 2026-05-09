@@ -4,11 +4,11 @@ import { BrandMark } from "@/components/brand-mark";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SiteFooter } from "@/components/site-footer";
 import { WhistleblowerForm } from "@/components/whistleblower-form";
+import { SITE_CONFIG } from "@/lib/site-config";
 
 export const metadata = {
-  title: "Whistleblower — Lapor Pelanggaran · FEB UNIGA Malang",
-  description:
-    "Saluran resmi pelaporan pelanggaran etik, korupsi, kekerasan, dan kecurangan akademik di FEB Universitas Gajayana Malang.",
+  title: `Whistleblower — Lapor Pelanggaran · ${SITE_CONFIG.universityShort}`,
+  description: `Saluran resmi pelaporan pelanggaran etik, korupsi, kekerasan, dan kecurangan akademik di ${SITE_CONFIG.universityName}.`,
 };
 
 export default function WhistleblowerPage() {
@@ -27,7 +27,7 @@ export default function WhistleblowerPage() {
           <BrandMark size={42} />
           <div className="flex flex-col leading-tight">
             <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              FEB Universitas Gajayana Malang
+              {SITE_CONFIG.universityName}
             </span>
             <span className="text-sm font-semibold text-foreground sm:text-base">
               Saluran Whistleblower
@@ -59,7 +59,8 @@ export default function WhistleblowerPage() {
         <p className="mt-3 max-w-2xl text-pretty text-base text-muted-foreground sm:text-lg">
           Saluran ini khusus untuk melaporkan dugaan pelanggaran etik, korupsi,
           kekerasan/pelecehan, kecurangan akademik, dan pelanggaran tata tertib
-          di lingkungan FEB UNIGA Malang. Identitas pelapor dilindungi.
+          di lingkungan {SITE_CONFIG.universityName}. Identitas pelapor
+          dilindungi.
         </p>
 
         <p className="mt-2 text-sm text-muted-foreground">

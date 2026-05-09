@@ -1,12 +1,13 @@
 import Link from "next/link";
-import { CheckCircle2, Copy, ShieldCheck } from "lucide-react";
+import { CheckCircle2, ShieldCheck } from "lucide-react";
 import { BrandMark } from "@/components/brand-mark";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SiteFooter } from "@/components/site-footer";
 import { CaseIdCopy } from "@/components/case-id-copy";
+import { SITE_CONFIG } from "@/lib/site-config";
 
 export const metadata = {
-  title: "Laporan Diterima — Whistleblower FEB UNIGA",
+  title: `Laporan Diterima — Whistleblower ${SITE_CONFIG.universityShort}`,
   description: "Laporan whistleblower berhasil dikirim. Simpan Case ID Anda.",
 };
 
@@ -34,7 +35,7 @@ export default function WhistleblowerThankYouPage({
           <BrandMark size={42} />
           <div className="flex flex-col leading-tight">
             <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              FEB Universitas Gajayana Malang
+              {SITE_CONFIG.universityName}
             </span>
             <span className="text-sm font-semibold text-foreground sm:text-base">
               Whistleblower
@@ -54,9 +55,9 @@ export default function WhistleblowerThankYouPage({
           </div>
           <p className="mt-3 text-sm text-muted-foreground sm:text-base">
             Terima kasih atas keberanian Anda melaporkan dugaan pelanggaran.
-            Tim Komisi Etik / SPI Fakultas akan menindaklanjuti laporan ini
-            sesuai prosedur. Identitas pelapor (jika diisi) dijaga
-            kerahasiaannya.
+            Tim Komisi Etik / SPI {SITE_CONFIG.universityShort} akan
+            menindaklanjuti laporan ini sesuai prosedur. Identitas pelapor
+            (jika diisi) dijaga kerahasiaannya.
           </p>
 
           <div className="mt-6 rounded-xl border border-border bg-card p-4 sm:p-5">
@@ -79,10 +80,10 @@ export default function WhistleblowerThankYouPage({
           <div className="mt-6 flex items-start gap-2 rounded-lg border border-border bg-background/60 p-4 text-sm text-muted-foreground">
             <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
             <p>
-              Laporan Anda tersimpan di sistem internal FEB UNIGA Malang dan
-              hanya dapat diakses oleh tim yang berwenang menangani
-              whistleblower. Tidak ada notifikasi otomatis dikirim ke pihak
-              lain.
+              Laporan Anda tersimpan di sistem internal{" "}
+              {SITE_CONFIG.universityName} dan hanya dapat diakses oleh tim
+              yang berwenang menangani whistleblower. Tidak ada notifikasi
+              otomatis dikirim ke pihak lain.
             </p>
           </div>
 

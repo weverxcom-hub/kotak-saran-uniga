@@ -16,21 +16,29 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
-import {
-  ROLE_OPTIONS,
-  UNIT_OPTIONS,
-  type AnonimChoice,
-} from "@/lib/form-config";
+import { ROLE_OPTIONS, type AnonimChoice } from "@/lib/form-config";
 import {
   WHISTLEBLOWER_CATEGORIES,
   type WhistleblowerCategory,
 } from "@/lib/whistleblower-config";
 import { cn } from "@/lib/utils";
 
+type UnitGroup = {
+  fakultas: string;
+  hasFacultyLevel: boolean;
+  prodi: string[];
+};
+
+type UnitsLoadState =
+  | { kind: "loading" }
+  | { kind: "ready"; groups: UnitGroup[] }
+  | { kind: "error"; message: string };
+
 type FormState = {
   saudaraAdalah: string;
   saudaraOther: string;
-  unitKerja: string;
+  fakultas: string;
+  prodi: string;
   kategori: WhistleblowerCategory | "";
   pihakTerlibat: string;
   isAnonim: AnonimChoice;
@@ -45,7 +53,8 @@ type FormState = {
 const INITIAL_STATE: FormState = {
   saudaraAdalah: "",
   saudaraOther: "",
-  unitKerja: "",
+  fakultas: "",
+  prodi: "",
   kategori: "",
   pihakTerlibat: "",
   isAnonim: "Ya", // default anonim ON
@@ -65,24 +74,69 @@ type SubmitStatus =
 const DETAIL_MIN = 30;
 const DETAIL_MAX = 5000;
 const KRONOLOGI_MAX = 5000;
+const PRODI_FACULTY_LEVEL_VALUE = "__faculty__";
 
 export function WhistleblowerForm() {
   const router = useRouter();
   const [state, setState] = React.useState<FormState>(INITIAL_STATE);
   const [status, setStatus] = React.useState<SubmitStatus>({ kind: "idle" });
+  const [units, setUnits] = React.useState<UnitsLoadState>({ kind: "loading" });
+
+  React.useEffect(() => {
+    let alive = true;
+    const load = async () => {
+      try {
+        const res = await fetch("/api/units", { cache: "no-store" });
+        const data = (await res.json().catch(() => null)) as
+          | { groups?: UnitGroup[]; error?: string }
+          | null;
+        if (!alive) return;
+        if (!res.ok) {
+          setUnits({
+            kind: "error",
+            message: data?.error ?? `Gagal memuat unit (${res.status}).`,
+          });
+          return;
+        }
+        setUnits({ kind: "ready", groups: data?.groups ?? [] });
+      } catch (err) {
+        if (!alive) return;
+        setUnits({
+          kind: "error",
+          message:
+            err instanceof Error ? err.message : "Gagal memuat unit.",
+        });
+      }
+    };
+    void load();
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const update = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setState((s) => ({ ...s, [key]: value }));
+
+  const setFakultas = (fakultas: string) =>
+    setState((s) => ({ ...s, fakultas, prodi: "" }));
 
   const role =
     state.saudaraAdalah === "Other"
       ? state.saudaraOther.trim()
       : state.saudaraAdalah;
 
+  const selectedGroup =
+    units.kind === "ready"
+      ? units.groups.find((g) => g.fakultas === state.fakultas)
+      : undefined;
+
   const validateClient = (): { ok: true } | { ok: false; message: string } => {
     if (!role) return { ok: false, message: "Pilih peran Anda." };
-    if (!state.unitKerja)
-      return { ok: false, message: "Pilih unit kerja / prodi." };
+    if (!state.fakultas)
+      return { ok: false, message: "Pilih fakultas Anda." };
+    const requireProdi = selectedGroup ? !selectedGroup.hasFacultyLevel : true;
+    if (requireProdi && !state.prodi)
+      return { ok: false, message: "Pilih program studi Anda." };
     if (!state.kategori)
       return { ok: false, message: "Pilih kategori pelanggaran." };
     if (state.isAnonim === "Tidak" && !state.nama.trim())
@@ -111,7 +165,8 @@ export function WhistleblowerForm() {
     try {
       const payload = {
         saudaraAdalah: role,
-        unitKerja: state.unitKerja,
+        fakultas: state.fakultas,
+        prodi: state.prodi || undefined,
         kategori: state.kategori,
         pihakTerlibat: state.pihakTerlibat.trim() || undefined,
         isAnonim: state.isAnonim,
@@ -170,7 +225,7 @@ export function WhistleblowerForm() {
           <p className="font-semibold">Pernyataan kerahasiaan & tanggung jawab</p>
           <p>
             Identitas pelapor (jika mengisi nama) dilindungi dan hanya diakses
-            oleh tim Komisi Etik / SPI Fakultas. Laporan palsu yang sengaja
+            oleh tim Komisi Etik / SPI Universitas. Laporan palsu yang sengaja
             menyesatkan dapat dikenakan sanksi etik / hukum sesuai peraturan
             yang berlaku.
           </p>
@@ -212,21 +267,69 @@ export function WhistleblowerForm() {
           </div>
 
           <div>
-            <Label htmlFor="wb-unit" className="mb-2 block">
+            <Label className="mb-2 block">
               Unit kerja / Prodi <span className="text-rose-600">*</span>
             </Label>
-            <Select
-              id="wb-unit"
-              value={state.unitKerja}
-              onChange={(e) => update("unitKerja", e.target.value)}
-            >
-              <option value="">— Pilih unit —</option>
-              {UNIT_OPTIONS.map((u) => (
-                <option key={u} value={u}>
-                  {u}
-                </option>
-              ))}
-            </Select>
+            {units.kind === "loading" ? (
+              <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2.5 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" /> Memuat…
+              </div>
+            ) : units.kind === "error" ? (
+              <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>{units.message}</span>
+              </div>
+            ) : (
+              <div className="grid gap-2">
+                <Select
+                  id="wb-fakultas"
+                  value={state.fakultas}
+                  onChange={(e) => setFakultas(e.target.value)}
+                >
+                  <option value="">— Pilih fakultas —</option>
+                  {units.groups.map((g) => (
+                    <option key={g.fakultas} value={g.fakultas}>
+                      {g.fakultas}
+                    </option>
+                  ))}
+                </Select>
+                <Select
+                  id="wb-prodi"
+                  value={
+                    state.prodi ||
+                    (selectedGroup?.hasFacultyLevel && state.fakultas
+                      ? PRODI_FACULTY_LEVEL_VALUE
+                      : "")
+                  }
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    update(
+                      "prodi",
+                      v === PRODI_FACULTY_LEVEL_VALUE ? "" : v,
+                    );
+                  }}
+                  disabled={!state.fakultas}
+                >
+                  {!state.fakultas ? (
+                    <option value="">— Pilih fakultas dulu —</option>
+                  ) : (
+                    <>
+                      <option value="">— Pilih prodi —</option>
+                      {selectedGroup?.hasFacultyLevel ? (
+                        <option value={PRODI_FACULTY_LEVEL_VALUE}>
+                          (Tingkat fakultas saja)
+                        </option>
+                      ) : null}
+                      {(selectedGroup?.prodi ?? []).map((p) => (
+                        <option key={p} value={p}>
+                          {p}
+                        </option>
+                      ))}
+                    </>
+                  )}
+                </Select>
+              </div>
+            )}
           </div>
         </div>
       </fieldset>
