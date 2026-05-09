@@ -22,6 +22,32 @@ export const WHISTLEBLOWER_CATEGORIES = [
 
 export type WhistleblowerCategory = (typeof WHISTLEBLOWER_CATEGORIES)[number];
 
+/**
+ * Daftar status valid untuk laporan whistleblower. Diekspor dari modul
+ * client-safe (tanpa dependensi googleapis) supaya bisa di-import oleh
+ * komponen "use client" tanpa men-trigger bundling googleapis ke browser.
+ * Backend re-export dari `lib/sheets.ts` untuk konsistensi.
+ *
+ * Urutan ini juga jadi urutan default di UI dropdown admin.
+ */
+export const WHISTLEBLOWER_STATUSES = [
+  "Diterima",
+  "Sedang ditindaklanjuti",
+  "Selesai",
+  "Ditolak / Tidak relevan",
+] as const;
+
+export type WhistleblowerStatus = (typeof WHISTLEBLOWER_STATUSES)[number];
+
+export function isWhistleblowerStatus(
+  v: unknown,
+): v is WhistleblowerStatus {
+  return (
+    typeof v === "string" &&
+    (WHISTLEBLOWER_STATUSES as readonly string[]).includes(v)
+  );
+}
+
 export type WhistleblowerPayload = {
   saudaraAdalah: Role | string;
   /** Fakultas yang dipilih. Untuk laporan tingkat fakultas, prodi boleh kosong. */

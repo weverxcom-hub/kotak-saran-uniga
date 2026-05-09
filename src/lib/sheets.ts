@@ -1,4 +1,8 @@
 import { google } from "googleapis";
+import {
+  isWhistleblowerStatus,
+  type WhistleblowerStatus,
+} from "@/lib/whistleblower-config";
 
 /**
  * Klien Google Sheets API — baca dan tulis ke spreadsheet rekap masukan.
@@ -448,7 +452,7 @@ export type Stats = {
 // Whistleblower (laporan pelanggaran)
 //
 // Disimpan di TAB TERPISAH bernama "Whistleblower" pada spreadsheet yang
-// sama. Skema kolom (12 kolom A–L):
+// sama. Skema kolom (15 kolom A–O):
 //   A Timestamp
 //   B Case ID            (WB-YYYYMMDD-XXXX, di-generate server)
 //   C Kategori
@@ -461,9 +465,18 @@ export type Stats = {
 //   J Kontak             (kalau identitas)
 //   K Detail Pelaporan
 //   L Kronologi & Bukti
+//   M Status             (Diterima / Sedang ditindaklanjuti / Selesai /
+//                          Ditolak — default "Diterima" saat dibuat)
+//   N Catatan Publik     (free-text, ditampilkan ke pelapor di /lacak)
+//   O Status Updated At  (ISO; di-update server saat admin ubah M / N)
 //
 // Untuk WB, kolom Detail (K) dan Kronologi (L) selalu terisi tanpa
 // peduli mode anonim — yang ditahan hanya kolom identitas H/I/J.
+//
+// Backward-compat: spreadsheet lama (12 kolom) tetap valid. Saat baris
+// baru ditambahkan atau saat admin update status untuk pertama kali,
+// kolom M:O akan otomatis ditulis. Baris lama tanpa M dianggap
+// status "Diterima" oleh fungsi pembaca.
 // ─────────────────────────────────────────────────────────────────────
 
 export const WHISTLEBLOWER_SHEET_NAME = "Whistleblower";
@@ -481,7 +494,20 @@ export const WHISTLEBLOWER_HEADERS = [
   "Kontak (jika identitas)",
   "Detail Pelaporan",
   "Kronologi & Bukti",
+  "Status",
+  "Catatan Publik",
+  "Status Updated At",
 ] as const;
+
+// Konstanta status whistleblower dipindah ke `lib/whistleblower-config.ts`
+// supaya bisa di-import oleh komponen "use client" tanpa men-trigger
+// bundling googleapis ke browser. Re-export di sini agar kode server
+// existing (yang import dari `lib/sheets`) tetap bekerja.
+export {
+  WHISTLEBLOWER_STATUSES,
+  isWhistleblowerStatus,
+} from "@/lib/whistleblower-config";
+export type { WhistleblowerStatus } from "@/lib/whistleblower-config";
 
 export type WhistleblowerRow = {
   rowIndex: number;
@@ -497,6 +523,9 @@ export type WhistleblowerRow = {
   kontak: string;
   detail: string;
   kronologi: string;
+  status: WhistleblowerStatus;
+  catatanPublik: string;
+  statusUpdatedAt: string;
 };
 
 export type WhistleblowerStats = {
@@ -522,9 +551,11 @@ export type WhistleblowerAppendPayload = {
 };
 
 /**
- * Cek apakah tab "Whistleblower" sudah ada di spreadsheet. Kalau belum,
- * tambahkan sheet baru lengkap dengan baris header. Idempoten — kalau
- * sheet sudah ada, fungsi ini no-op.
+ * Pastikan tab "Whistleblower" siap pakai. Kalau belum ada, buat baru
+ * dengan header lengkap (15 kolom). Kalau sudah ada tapi memakai skema
+ * lama (12 kolom), tambahkan header kolom M:O tanpa menyentuh data
+ * existing — backward-compat untuk spreadsheet yang sudah berisi
+ * laporan dari versi sebelumnya.
  */
 async function ensureWhistleblowerSheet(): Promise<void> {
   const { sheetId } = getConfig();
@@ -536,32 +567,49 @@ async function ensureWhistleblowerSheet(): Promise<void> {
   const exists = (meta.data.sheets ?? []).some(
     (s) => s.properties?.title === WHISTLEBLOWER_SHEET_NAME,
   );
-  if (exists) return;
-  await sheets.spreadsheets.batchUpdate({
-    spreadsheetId: sheetId,
-    requestBody: {
-      requests: [
-        {
-          addSheet: {
-            properties: {
-              title: WHISTLEBLOWER_SHEET_NAME,
-              gridProperties: {
-                rowCount: 1000,
-                columnCount: WHISTLEBLOWER_HEADERS.length,
-                frozenRowCount: 1,
+  if (!exists) {
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: sheetId,
+      requestBody: {
+        requests: [
+          {
+            addSheet: {
+              properties: {
+                title: WHISTLEBLOWER_SHEET_NAME,
+                gridProperties: {
+                  rowCount: 1000,
+                  columnCount: WHISTLEBLOWER_HEADERS.length,
+                  frozenRowCount: 1,
+                },
               },
             },
           },
-        },
-      ],
-    },
-  });
-  await sheets.spreadsheets.values.update({
+        ],
+      },
+    });
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: sheetId,
+      range: `${WHISTLEBLOWER_SHEET_NAME}!A1`,
+      valueInputOption: "RAW",
+      requestBody: { values: [WHISTLEBLOWER_HEADERS.slice()] },
+    });
+    return;
+  }
+  // Sheet sudah ada — pastikan header row-nya 15 kolom (migrasi v1→v2).
+  const headerRes = await sheets.spreadsheets.values.get({
     spreadsheetId: sheetId,
-    range: `${WHISTLEBLOWER_SHEET_NAME}!A1`,
-    valueInputOption: "RAW",
-    requestBody: { values: [WHISTLEBLOWER_HEADERS.slice()] },
+    range: `${WHISTLEBLOWER_SHEET_NAME}!A1:O1`,
+    valueRenderOption: "FORMATTED_VALUE",
   });
+  const headerRow = (headerRes.data.values?.[0] ?? []) as string[];
+  if (headerRow.length < WHISTLEBLOWER_HEADERS.length) {
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: sheetId,
+      range: `${WHISTLEBLOWER_SHEET_NAME}!A1:O1`,
+      valueInputOption: "RAW",
+      requestBody: { values: [WHISTLEBLOWER_HEADERS.slice()] },
+    });
+  }
 }
 
 function generateCaseId(now: Date): string {
@@ -580,7 +628,9 @@ function generateCaseId(now: Date): string {
 
 /**
  * Append satu baris laporan whistleblower ke tab "Whistleblower". Auto
- * create tab kalau belum ada. Mengembalikan Case ID yang ter-generate.
+ * create tab kalau belum ada. Status default "Diterima" supaya pelapor
+ * yang lacak Case ID langsung lihat "Diterima" tanpa menunggu admin.
+ * Mengembalikan Case ID yang ter-generate.
  */
 export async function appendWhistleblowerReport(
   payload: WhistleblowerAppendPayload,
@@ -605,15 +655,36 @@ export async function appendWhistleblowerReport(
     isAnonim ? "" : (payload.kontak ?? ""), // J
     payload.detail, // K
     payload.kronologi ?? "", // L
+    "Diterima", // M — status default
+    "", // N — catatan publik
+    timestamp, // O — status updated at
   ];
   await sheets.spreadsheets.values.append({
     spreadsheetId: sheetId,
-    range: `${WHISTLEBLOWER_SHEET_NAME}!A:L`,
+    range: `${WHISTLEBLOWER_SHEET_NAME}!A:O`,
     valueInputOption: "USER_ENTERED",
     insertDataOption: "INSERT_ROWS",
     requestBody: { values: [row] },
   });
   return { caseId, timestamp };
+}
+
+function normalizeStatusCell(raw: string): WhistleblowerStatus {
+  const trimmed = raw.trim();
+  if (!trimmed) return "Diterima";
+  if (isWhistleblowerStatus(trimmed)) return trimmed;
+  // Toleransi typo / variasi penulisan dari spreadsheet manual.
+  const lower = trimmed.toLowerCase();
+  if (lower.includes("selesai")) return "Selesai";
+  if (lower.includes("tolak") || lower.includes("tidak relevan"))
+    return "Ditolak / Tidak relevan";
+  if (
+    lower.includes("tindak") ||
+    lower.includes("proses") ||
+    lower.includes("progress")
+  )
+    return "Sedang ditindaklanjuti";
+  return "Diterima";
 }
 
 export async function fetchWhistleblowerReports(): Promise<WhistleblowerRow[]> {
@@ -623,7 +694,7 @@ export async function fetchWhistleblowerReports(): Promise<WhistleblowerRow[]> {
   try {
     const res = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
-      range: `${WHISTLEBLOWER_SHEET_NAME}!A:L`,
+      range: `${WHISTLEBLOWER_SHEET_NAME}!A:O`,
       valueRenderOption: "FORMATTED_VALUE",
     });
     const values = (res.data.values as RawRow[] | undefined) ?? [];
@@ -634,9 +705,10 @@ export async function fetchWhistleblowerReports(): Promise<WhistleblowerRow[]> {
       const r = rows[i];
       if (!r || r.every((c) => !c?.toString().trim())) continue;
       const cell = (idx: number) => (r[idx] ?? "").toString().trim();
+      const timestamp = parseTimestamp(cell(0));
       out.push({
         rowIndex: i + 2,
-        timestamp: parseTimestamp(cell(0)),
+        timestamp,
         caseId: cell(1),
         kategori: cell(2),
         saudaraAdalah: cell(3),
@@ -648,6 +720,11 @@ export async function fetchWhistleblowerReports(): Promise<WhistleblowerRow[]> {
         kontak: cell(9),
         detail: cell(10),
         kronologi: cell(11),
+        status: normalizeStatusCell(cell(12)),
+        catatanPublik: cell(13),
+        statusUpdatedAt: cell(14)
+          ? parseTimestamp(cell(14))
+          : timestamp,
       });
     }
     return out;
@@ -662,11 +739,76 @@ export async function fetchWhistleblowerReports(): Promise<WhistleblowerRow[]> {
   }
 }
 
+/**
+ * Lookup publik berdasarkan Case ID. Hanya mengembalikan field yang aman
+ * untuk diketahui pelapor (Case ID, kategori, status, catatan publik,
+ * tanggal lapor + tanggal update). TIDAK mengembalikan detail pelaporan,
+ * identitas, atau kontak — supaya kalau Case ID bocor pun isi kasus
+ * tetap aman.
+ */
+export type WhistleblowerPublicStatus = {
+  caseId: string;
+  kategori: string;
+  status: WhistleblowerStatus;
+  catatanPublik: string;
+  reportedAt: string;
+  statusUpdatedAt: string;
+};
+
+export async function fetchWhistleblowerPublicStatus(
+  caseId: string,
+): Promise<WhistleblowerPublicStatus | null> {
+  const trimmed = caseId.trim();
+  if (!trimmed) return null;
+  const all = await fetchWhistleblowerReports();
+  const target = trimmed.toUpperCase();
+  const found = all.find((r) => r.caseId.toUpperCase() === target);
+  if (!found) return null;
+  return {
+    caseId: found.caseId,
+    kategori: found.kategori,
+    status: found.status,
+    catatanPublik: found.catatanPublik,
+    reportedAt: found.timestamp,
+    statusUpdatedAt: found.statusUpdatedAt || found.timestamp,
+  };
+}
+
+/**
+ * Update status & catatan publik untuk satu baris whistleblower.
+ * `rowIndex` 1-indexed termasuk header (sama seperti unit). Penulisan
+ * sekaligus mengisi kolom O (Status Updated At) dengan timestamp
+ * sekarang.
+ */
+export async function updateWhistleblowerStatus(
+  rowIndex: number,
+  input: { status: WhistleblowerStatus; catatanPublik: string },
+): Promise<{ statusUpdatedAt: string }> {
+  if (!Number.isInteger(rowIndex) || rowIndex < 2) {
+    throw new Error("rowIndex tidak valid.");
+  }
+  await ensureWhistleblowerSheet();
+  const { sheetId } = getConfig();
+  const sheets = getSheetsClient("write");
+  const now = new Date();
+  const statusUpdatedAt = formatIndonesianTimestamp(now);
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: sheetId,
+    range: `${WHISTLEBLOWER_SHEET_NAME}!M${rowIndex}:O${rowIndex}`,
+    valueInputOption: "USER_ENTERED",
+    requestBody: {
+      values: [[input.status, input.catatanPublik, statusUpdatedAt]],
+    },
+  });
+  return { statusUpdatedAt };
+}
+
 export type WhistleblowerFilters = {
   q?: string;
   kategori?: string;
   unit?: string;
   mode?: "Ya" | "Tidak" | "all";
+  status?: WhistleblowerStatus | "all";
   dateFrom?: string;
   dateTo?: string;
 };
@@ -693,6 +835,9 @@ export function applyWhistleblowerFilters(
       const isAnonim = /ya|anonim/i.test(r.isAnonim);
       const wantAnonim = filters.mode === "Ya";
       if (isAnonim !== wantAnonim) return false;
+    }
+    if (filters.status && filters.status !== "all") {
+      if (r.status !== filters.status) return false;
     }
     if (!isNaN(from) || !isNaN(to)) {
       const t = Date.parse(r.timestamp);

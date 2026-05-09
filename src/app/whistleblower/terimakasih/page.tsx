@@ -1,7 +1,6 @@
 import Link from "next/link";
-import { CheckCircle2, ShieldCheck } from "lucide-react";
-import { BrandMark } from "@/components/brand-mark";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { CheckCircle2, Search, ShieldCheck } from "lucide-react";
+import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { CaseIdCopy } from "@/components/case-id-copy";
 import { SITE_CONFIG } from "@/lib/site-config";
@@ -20,9 +19,12 @@ export default function WhistleblowerThankYouPage({
 }) {
   const caseId = searchParams.case ?? "(tidak tersedia)";
   const isValidId = /^WB-\d{8}-[A-Z0-9]{4}$/.test(caseId);
+  const lacakHref = isValidId
+    ? `/lacak?caseId=${encodeURIComponent(caseId)}`
+    : "/lacak";
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden">
+    <div className="relative flex min-h-screen flex-col overflow-x-hidden">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
@@ -30,22 +32,9 @@ export default function WhistleblowerThankYouPage({
         <div className="absolute -left-24 top-[-10%] h-[420px] w-[420px] rounded-full bg-emerald-500/10 blur-3xl" />
       </div>
 
-      <header className="container flex items-center justify-between py-5 sm:py-6">
-        <div className="flex items-center gap-3">
-          <BrandMark size={42} />
-          <div className="flex flex-col leading-tight">
-            <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              {SITE_CONFIG.universityName}
-            </span>
-            <span className="text-sm font-semibold text-foreground sm:text-base">
-              Whistleblower
-            </span>
-          </div>
-        </div>
-        <ThemeToggle />
-      </header>
+      <SiteNav />
 
-      <main className="container max-w-2xl pb-16 pt-4">
+      <main className="container max-w-2xl flex-1 pb-16 pt-6 sm:pt-10">
         <div className="rounded-2xl border border-emerald-500/30 bg-emerald-50/60 p-6 dark:bg-emerald-500/10 sm:p-8">
           <div className="flex items-center gap-3">
             <CheckCircle2 className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
@@ -71,9 +60,15 @@ export default function WhistleblowerThankYouPage({
               {isValidId ? <CaseIdCopy caseId={caseId} /> : null}
             </div>
             <p className="mt-3 text-xs text-muted-foreground">
-              <strong>Simpan Case ID ini.</strong> Anda dapat menyebutkannya
-              saat menanyakan status laporan atau saat mengirim bukti
-              pendukung melalui email pengelola.
+              <strong>Simpan Case ID ini.</strong> Anda dapat memantau status
+              laporan kapan saja di halaman{" "}
+              <Link
+                href={lacakHref}
+                className="font-medium text-primary hover:underline"
+              >
+                Lacak Case ID
+              </Link>
+              .
             </p>
           </div>
 
@@ -89,16 +84,17 @@ export default function WhistleblowerThankYouPage({
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
             <Link
-              href="/"
-              className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition hover:opacity-90"
+              href={lacakHref}
+              className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition hover:opacity-90"
             >
-              Kembali ke beranda
+              <Search className="h-4 w-4" />
+              Lacak status sekarang
             </Link>
             <Link
-              href="/whistleblower"
+              href="/"
               className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-muted"
             >
-              Kirim laporan lagi
+              Kembali ke beranda
             </Link>
           </div>
         </div>
