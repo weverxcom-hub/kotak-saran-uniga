@@ -12,7 +12,7 @@ export const metadata = {
 
 export default function WhistleblowerPage() {
   return (
-    <div className="relative flex min-h-screen flex-col overflow-x-hidden">
+    <div className="relative flex min-h-screen flex-col overflow-x-clip">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"

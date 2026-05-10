@@ -16,7 +16,7 @@ export default function LacakPage({
 }) {
   const initialCaseId = searchParams?.caseId?.trim() ?? "";
   return (
-    <div className="relative flex min-h-screen flex-col overflow-x-hidden">
+    <div className="relative flex min-h-screen flex-col overflow-x-clip">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"

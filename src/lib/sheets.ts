@@ -791,16 +791,18 @@ export async function updateWhistleblowerStatus(
   const { sheetId } = getConfig();
   const sheets = getSheetsClient("write");
   const now = new Date();
-  const statusUpdatedAt = formatIndonesianTimestamp(now);
+  const sheetCell = formatIndonesianTimestamp(now);
   await sheets.spreadsheets.values.update({
     spreadsheetId: sheetId,
     range: `${WHISTLEBLOWER_SHEET_NAME}!M${rowIndex}:O${rowIndex}`,
     valueInputOption: "USER_ENTERED",
     requestBody: {
-      values: [[input.status, input.catatanPublik, statusUpdatedAt]],
+      values: [[input.status, input.catatanPublik, sheetCell]],
     },
   });
-  return { statusUpdatedAt };
+  // Kembalikan ISO ke client biar `new Date(...)` di sisi browser parse benar
+  // (kalau dikirim sebagai "DD/MM/YYYY HH:mm:ss", JS Date akan misinterpret jadi MM/DD).
+  return { statusUpdatedAt: now.toISOString() };
 }
 
 export type WhistleblowerFilters = {
