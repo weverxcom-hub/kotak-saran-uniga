@@ -1,7 +1,6 @@
 import Link from "next/link";
-import { ArrowLeft, ShieldAlert } from "lucide-react";
-import { BrandMark } from "@/components/brand-mark";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { ShieldAlert } from "lucide-react";
+import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { WhistleblowerForm } from "@/components/whistleblower-form";
 import { SITE_CONFIG } from "@/lib/site-config";
@@ -13,7 +12,7 @@ export const metadata = {
 
 export default function WhistleblowerPage() {
   return (
-    <div className="relative min-h-screen overflow-x-hidden">
+    <div className="relative flex min-h-screen flex-col overflow-x-clip">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
@@ -22,31 +21,9 @@ export default function WhistleblowerPage() {
         <div className="absolute -right-32 top-[10%] h-[420px] w-[420px] rounded-full bg-slate-500/10 blur-3xl" />
       </div>
 
-      <header className="container flex items-center justify-between py-5 sm:py-6">
-        <div className="flex items-center gap-3">
-          <BrandMark size={42} />
-          <div className="flex flex-col leading-tight">
-            <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              {SITE_CONFIG.universityName}
-            </span>
-            <span className="text-sm font-semibold text-foreground sm:text-base">
-              Saluran Whistleblower
-            </span>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Link
-            href="/"
-            className="hidden items-center gap-1 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground sm:inline-flex"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Kotak saran
-          </Link>
-          <ThemeToggle />
-        </div>
-      </header>
+      <SiteNav />
 
-      <main className="container max-w-3xl pb-16 pt-2 sm:pt-4">
+      <main className="container max-w-3xl flex-1 pb-16 pt-6 sm:pt-10">
         <div className="mb-6 inline-flex w-fit items-center gap-2 rounded-full border border-rose-500/30 bg-rose-500/10 px-3 py-1 text-xs font-medium text-rose-700 dark:text-rose-200">
           <ShieldAlert className="h-3.5 w-3.5" />
           Saluran resmi laporan pelanggaran
@@ -65,10 +42,20 @@ export default function WhistleblowerPage() {
 
         <p className="mt-2 text-sm text-muted-foreground">
           Untuk masukan / saran perbaikan layanan biasa, silakan gunakan{" "}
-          <Link href="/" className="font-medium text-primary hover:underline">
-            Kotak Saran Elektronik
+          <Link
+            href="/saran"
+            className="font-medium text-primary hover:underline"
+          >
+            Saran &amp; Kritik
           </Link>
-          .
+          . Sudah pernah lapor? Anda bisa{" "}
+          <Link
+            href="/lacak"
+            className="font-medium text-primary hover:underline"
+          >
+            lacak status laporan
+          </Link>{" "}
+          dengan Case ID Anda.
         </p>
 
         <div className="mt-8">
