@@ -12,8 +12,8 @@ import { SITE_CONFIG } from "@/lib/site-config";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: `Kelola Unit / Prodi — ${SITE_CONFIG.universityShort}`,
-  description: `Kelola daftar fakultas dan program studi yang tampil di form Kotak Saran ${SITE_CONFIG.universityName}.`,
+  title: "Kelola Unit / Prodi",
+  description: `Kelola daftar fakultas dan program studi yang tampil di form ${SITE_CONFIG.siteName} (${SITE_CONFIG.universityName}).`,
 };
 
 export default function ReportUnitsPage() {

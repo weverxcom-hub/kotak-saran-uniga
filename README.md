@@ -1,6 +1,6 @@
-# Kotak Saran Elektronik — Tingkat Universitas (Universitas Gajayana Malang)
+# Suara UNIGA Malang — Kotak Saran Elektronik Tingkat Universitas
 
-Versi **tingkat universitas** dari Kotak Saran Elektronik. Default branding diisi untuk **Universitas Gajayana Malang (UNIGA)**, namun seluruh teks, nama, logo, dan domain bisa di-override lewat env var `NEXT_PUBLIC_*` — sehingga satu codebase dapat di-deploy ulang untuk kampus lain tanpa edit kode.
+**Suara UNIGA Malang** adalah versi **tingkat universitas** dari Kotak Saran Elektronik. Default branding diisi untuk **Universitas Gajayana Malang** (disingkat "UNIGA Malang" — selalu disertai "Malang" supaya tidak bertabrakan dengan kampus lain yang juga memakai singkatan UNIGA). Domain default-nya `suara.unigamalang.ac.id`. Seluruh teks, nama, logo, dan domain bisa di-override lewat env var `NEXT_PUBLIC_*` — sehingga satu codebase dapat di-deploy ulang untuk kampus lain tanpa edit kode.
 
 UI dibangun dengan Next.js 14, Tailwind CSS, dan animasi modern. Semua data disimpan di **Google Spreadsheet** lewat Google Sheets API — termasuk **daftar fakultas/prodi yang dinamis** (admin bisa tambah / edit / nonaktifkan unit langsung dari halaman `/report/units`, tanpa redeploy).
 
@@ -62,9 +62,11 @@ lewat env var `NEXT_PUBLIC_*` (lihat `.env.example`). Contoh untuk redeploy ke
 kampus lain — cukup set env var berikut di Vercel dan redeploy:
 
 ```
+NEXT_PUBLIC_SITE_NAME=Suara UCN
 NEXT_PUBLIC_UNIVERSITY_NAME=Universitas Contoh Nusantara
 NEXT_PUBLIC_UNIVERSITY_SHORT=UCN
-NEXT_PUBLIC_SITE_TAGLINE=Kotak Saran Elektronik UCN
+NEXT_PUBLIC_SITE_TAGLINE=Saluran resmi saran, kritik, & whistleblower
+NEXT_PUBLIC_APP_DOMAIN=suara.ucn.ac.id
 NEXT_PUBLIC_LOGO_PATH=/img/ucn-logo.png
 NEXT_PUBLIC_LOGO_OG_PATH=/img/ucn-logo@2x.png
 NEXT_PUBLIC_UNIVERSITY_URL=https://ucn.ac.id
@@ -147,7 +149,7 @@ Fitur:
 | `GOOGLE_SERVICE_ACCOUNT_EMAIL` + `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY` | wajib (opsi B) | Alternatif kalau JSON susah di-paste ke Vercel UI (karena multiline `private_key`). Kode support kedua format. |
 | `REPORT_SHEET_RANGE` | opsional | Default `A:Z` di sheet pertama. |
 | `REPORT_SESSION_SECRET` | opsional | HMAC secret untuk cookie. Default fallback ke `REPORT_PASSWORD`. |
-| `NEXT_PUBLIC_UNIVERSITY_NAME` / `_SHORT` / `_LOGO_PATH` / dst. | opsional | Override branding untuk redeploy multi-kampus. |
+| `NEXT_PUBLIC_SITE_NAME` / `_UNIVERSITY_NAME` / `_SHORT` / `_LOGO_PATH` / `_APP_DOMAIN` / dst. | opsional | Override branding untuk redeploy multi-kampus. |
 
 Service account email **wajib** diberi akses **Editor** ke spreadsheet target
 supaya bisa `append` baris baru saat user submit, dan menulis ke tab `Units`

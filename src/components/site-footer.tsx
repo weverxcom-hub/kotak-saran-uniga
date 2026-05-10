@@ -24,8 +24,8 @@ export function SiteFooter({
               © {year} {SITE_CONFIG.universityName}
             </p>
             <p>
-              Kotak Saran Elektronik tingkat universitas · data tetap tercatat
-              pada sistem terpusat {SITE_CONFIG.universityShort}.
+              {SITE_CONFIG.siteName} · data tercatat pada sistem terpusat{" "}
+              {SITE_CONFIG.universityShort}.
             </p>
           </>
         ) : null}

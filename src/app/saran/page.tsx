@@ -7,7 +7,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { SITE_CONFIG } from "@/lib/site-config";
 
 export const metadata: Metadata = {
-  title: `Kirim Saran & Kritik · ${SITE_CONFIG.universityShort}`,
+  title: "Kirim Saran & Kritik",
   description: `Sampaikan saran, kritik, atau apresiasi terhadap layanan ${SITE_CONFIG.universityName}.`,
 };
 

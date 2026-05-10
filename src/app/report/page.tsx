@@ -12,8 +12,8 @@ import { SITE_CONFIG } from "@/lib/site-config";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: `Rekap Masukan — Kotak Saran ${SITE_CONFIG.universityShort}`,
-  description: `Dashboard rekap masukan Kotak Saran Elektronik ${SITE_CONFIG.universityName}.`,
+  title: "Rekap Masukan",
+  description: `Dashboard rekap masukan ${SITE_CONFIG.siteName} (${SITE_CONFIG.universityName}).`,
 };
 
 export default function ReportPage() {

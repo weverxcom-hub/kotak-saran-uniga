@@ -12,7 +12,7 @@ import { SITE_CONFIG } from "@/lib/site-config";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: `Rekap Whistleblower — ${SITE_CONFIG.universityShort}`,
+  title: "Rekap Whistleblower",
   description: `Dashboard rekap laporan whistleblower ${SITE_CONFIG.universityName}.`,
 };
 

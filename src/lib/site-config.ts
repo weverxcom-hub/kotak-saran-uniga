@@ -4,8 +4,10 @@
  * var (server-side maupun NEXT_PUBLIC_* untuk client) supaya bisa redeploy
  * untuk kampus lain tanpa edit kode.
  *
- * Default-nya diisi untuk Universitas Gajayana Malang (UNIGA) — versi
- * tingkat universitas penuh, bukan hanya fakultas.
+ * Default-nya diisi untuk Universitas Gajayana Malang (UNIGA Malang) — versi
+ * tingkat universitas penuh, bukan hanya fakultas. Penyebutan "UNIGA" di
+ * UI selalu disertai "Malang" supaya tidak bertabrakan dengan kampus lain
+ * yang juga memakai singkatan "UNIGA".
  */
 
 const env = (key: string): string | undefined => {
@@ -14,6 +16,11 @@ const env = (key: string): string | undefined => {
 };
 
 export const SITE_CONFIG = {
+  /**
+   * Brand utama produk ini di kampus tersebut (mis. "Suara UNIGA Malang").
+   * Dipakai sebagai judul tab browser, header navbar besar, OG title.
+   */
+  siteName: env("NEXT_PUBLIC_SITE_NAME") ?? "Suara UNIGA Malang",
   /** Nama panjang universitas (dipakai di metadata, footer, dst). */
   universityName:
     env("NEXT_PUBLIC_UNIVERSITY_NAME") ?? "Universitas Gajayana Malang",
@@ -22,7 +29,10 @@ export const SITE_CONFIG = {
   /** Tagline singkat di hero / OG. */
   tagline:
     env("NEXT_PUBLIC_SITE_TAGLINE") ??
-    "Kotak Saran Elektronik tingkat universitas",
+    "Saluran resmi saran, kritik, & whistleblower",
+  /** Domain pendek tempat aplikasi ini di-host (untuk OG / share). */
+  appDomain:
+    env("NEXT_PUBLIC_APP_DOMAIN") ?? "suara.unigamalang.ac.id",
   /** URL situs resmi kampus (footer link & meta). */
   websiteUrl: env("NEXT_PUBLIC_UNIVERSITY_URL") ?? "https://unigamalang.ac.id",
   /** Email pengelola untuk follow-up whistleblower & kontak admin. */

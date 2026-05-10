@@ -3,9 +3,10 @@ import { SITE_CONFIG } from "@/lib/site-config";
 import { cn } from "@/lib/utils";
 
 /**
- * Logo holder bergaya UNIGA: lingkaran putih dengan ring tipis warna emas,
- * mengikuti gaya identitas resmi Universitas Gajayana (segel di atas dasar
- * biru navy). Bentuk circular dipilih supaya senada dengan logo segel UNIGA.
+ * Logo holder bergaya UNIGA Malang: lingkaran putih dengan ring tipis warna
+ * emas, mengikuti gaya identitas resmi Universitas Gajayana Malang (segel di
+ * atas dasar biru navy). Bentuk circular dipilih supaya senada dengan logo
+ * segel UNIGA Malang.
  */
 export function BrandMark({
   className,

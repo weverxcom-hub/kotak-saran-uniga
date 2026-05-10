@@ -65,11 +65,11 @@ export function SiteNav() {
               {SITE_CONFIG.universityName}
             </span>
             <span className="truncate text-sm font-semibold text-foreground">
-              Kotak Saran Elektronik
+              {SITE_CONFIG.siteName}
             </span>
           </div>
           <span className="text-sm font-semibold text-foreground sm:hidden">
-            {SITE_CONFIG.universityShort}
+            {SITE_CONFIG.siteName}
           </span>
         </Link>
 

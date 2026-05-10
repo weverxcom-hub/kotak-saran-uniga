@@ -13,22 +13,25 @@ const inter = Inter({
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ||
   process.env.VERCEL_URL ||
-  "https://kotak-saran.vercel.app";
+  `https://${SITE_CONFIG.appDomain}`;
 
-const TITLE = `Kotak Saran Elektronik — ${SITE_CONFIG.universityName}`;
-const DESCRIPTION = `Sampaikan masukan, saran, kritik, dan keluhan Anda terhadap layanan akademik, non-akademik, dan sarana prasarana ${SITE_CONFIG.universityName}. Identitas dijamin kerahasiaannya.`;
-const OG_TITLE = `Kotak Saran Elektronik ${SITE_CONFIG.universityShort}`;
+const TITLE_DEFAULT = `${SITE_CONFIG.siteName} — ${SITE_CONFIG.universityName}`;
+const TITLE_TEMPLATE = `%s · ${SITE_CONFIG.siteName}`;
+const DESCRIPTION = `${SITE_CONFIG.siteName} — saluran resmi untuk menyampaikan saran, kritik, dan laporan whistleblower terkait layanan akademik, non-akademik, dan sarana prasarana ${SITE_CONFIG.universityName}. Identitas dijamin kerahasiaannya.`;
+const OG_TITLE = SITE_CONFIG.siteName;
 const OG_DESCRIPTION = `Suarakan masukan Anda untuk peningkatan kualitas layanan ${SITE_CONFIG.universityName}.`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(
     SITE_URL.startsWith("http") ? SITE_URL : `https://${SITE_URL}`,
   ),
-  title: TITLE,
+  title: { default: TITLE_DEFAULT, template: TITLE_TEMPLATE },
   description: DESCRIPTION,
   keywords: [
+    SITE_CONFIG.siteName,
     "kotak saran",
     "kotak saran universitas",
+    "whistleblower",
     SITE_CONFIG.universityName,
     SITE_CONFIG.universityShort,
     "keluhan",
