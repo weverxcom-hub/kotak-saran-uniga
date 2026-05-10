@@ -3,9 +3,11 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Menu, X, LogIn } from "lucide-react";
 import { BrandMark } from "@/components/brand-mark";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { LanguageToggle } from "@/components/language-toggle";
 import { Button } from "@/components/ui/button";
 import { SITE_CONFIG } from "@/lib/site-config";
 import { cn } from "@/lib/utils";
@@ -16,21 +18,21 @@ import { cn } from "@/lib/utils";
  * tengah/kanan, tombol login admin di paling kanan. Mobile pakai
  * hamburger menu yang slide ke bawah.
  *
- * Single source of truth daftar menu ada di `NAV_ITEMS` agar konsisten
- * antar halaman. Item "Login Admin" sengaja dipisah supaya bisa diberi
- * styling outline button di desktop.
+ * Daftar menu di-resolve di dalam komponen via `useTranslations` supaya
+ * label otomatis ikut bahasa aktif (cookie `ksu_locale`).
  */
 
-type NavItem = { href: string; label: string };
-
-const NAV_ITEMS: ReadonlyArray<NavItem> = [
-  { href: "/", label: "Beranda" },
-  { href: "/saran", label: "Saran & Kritik" },
-  { href: "/whistleblower", label: "Whistleblower" },
-  { href: "/lacak", label: "Lacak Case ID" },
-];
+const NAV_HREFS = ["/", "/saran", "/whistleblower", "/lacak"] as const;
+type NavHref = (typeof NAV_HREFS)[number];
+const NAV_KEY: Record<NavHref, "home" | "saran" | "whistleblower" | "lacak"> = {
+  "/": "home",
+  "/saran": "saran",
+  "/whistleblower": "whistleblower",
+  "/lacak": "lacak",
+};
 
 export function SiteNav() {
+  const t = useTranslations("nav");
   const pathname = usePathname() ?? "/";
   const [open, setOpen] = React.useState(false);
 
@@ -74,41 +76,42 @@ export function SiteNav() {
         </Link>
 
         <nav
-          aria-label="Navigasi utama"
+          aria-label={t("main")}
           className="ml-auto hidden items-center gap-1 lg:flex"
         >
-          {NAV_ITEMS.map((item) => (
+          {NAV_HREFS.map((href) => (
             <Link
-              key={item.href}
-              href={item.href}
+              key={href}
+              href={href}
               className={cn(
                 "relative rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition hover:bg-muted/60 hover:text-foreground",
-                isActive(item.href) &&
+                isActive(href) &&
                   "text-foreground after:absolute after:inset-x-3 after:-bottom-px after:h-0.5 after:rounded-full after:bg-accent",
               )}
             >
-              {item.label}
+              {t(NAV_KEY[href])}
             </Link>
           ))}
         </nav>
 
         <div className="ml-auto flex items-center gap-1.5 lg:ml-0">
+          <LanguageToggle />
           <ThemeToggle />
           <Link
             href="/report/login"
             className="hidden lg:inline-flex"
-            aria-label="Login admin"
+            aria-label={t("loginAdmin")}
           >
             <Button type="button" variant="outline" size="sm">
               <LogIn className="h-4 w-4" />
-              Login Admin
+              {t("loginAdmin")}
             </Button>
           </Link>
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
             className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground lg:hidden"
-            aria-label={open ? "Tutup menu" : "Buka menu"}
+            aria-label={open ? t("closeMenu") : t("openMenu")}
             aria-expanded={open}
             aria-controls="site-nav-mobile"
           >
@@ -130,21 +133,21 @@ export function SiteNav() {
         )}
       >
         <nav
-          aria-label="Navigasi utama (mobile)"
+          aria-label={t("mainMobile")}
           className="container flex flex-col gap-1 border-t border-border/60 py-3"
         >
-          {NAV_ITEMS.map((item) => (
+          {NAV_HREFS.map((href) => (
             <Link
-              key={item.href}
-              href={item.href}
+              key={href}
+              href={href}
               className={cn(
                 "rounded-md px-3 py-2.5 text-sm font-medium transition",
-                isActive(item.href)
+                isActive(href)
                   ? "bg-primary/10 text-foreground"
                   : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
               )}
             >
-              {item.label}
+              {t(NAV_KEY[href])}
             </Link>
           ))}
           <Link
@@ -152,7 +155,7 @@ export function SiteNav() {
             className="mt-1 inline-flex items-center justify-center gap-2 rounded-md border border-border bg-card px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted/60"
           >
             <LogIn className="h-4 w-4" />
-            Login Admin
+            {t("loginAdmin")}
           </Link>
         </nav>
       </div>

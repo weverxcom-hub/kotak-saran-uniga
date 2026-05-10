@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useLocale, useTranslations } from "next-intl";
 import {
   Search,
   Filter,
@@ -30,6 +31,8 @@ import { BreakdownList } from "@/components/report/breakdown-list";
 import { ROLE_OPTIONS } from "@/lib/form-config";
 import type { SubmissionRow, Stats } from "@/lib/sheets";
 import { cn } from "@/lib/utils";
+
+const LOCALE_TAG: Record<string, string> = { id: "id-ID", en: "en-US" };
 
 type UnitGroup = {
   fakultas: string;
@@ -90,28 +93,30 @@ function buildQuery(f: Filters): string {
   return sp.toString();
 }
 
-function formatDateTime(iso: string): string {
+function formatDateTime(iso: string, locale: string): string {
   if (!iso) return "—";
   const d = new Date(iso);
   if (isNaN(d.getTime())) return iso;
-  return new Intl.DateTimeFormat("id-ID", {
+  return new Intl.DateTimeFormat(LOCALE_TAG[locale] ?? "id-ID", {
     dateStyle: "medium",
     timeStyle: "short",
     timeZone: "Asia/Jakarta",
   }).format(d);
 }
 
-function formatMonth(month: string): string {
-  // input "YYYY-MM"
+function formatMonth(month: string, locale: string): string {
   const [y, m] = month.split("-").map(Number);
   if (!y || !m) return month;
-  return new Intl.DateTimeFormat("id-ID", {
+  return new Intl.DateTimeFormat(LOCALE_TAG[locale] ?? "id-ID", {
     year: "numeric",
     month: "short",
   }).format(new Date(Date.UTC(y, m - 1, 1)));
 }
 
 export function ReportDashboard() {
+  const t = useTranslations("adminReport");
+  const tCommon = useTranslations("common");
+  const locale = useLocale();
   const [filters, setFilters] = React.useState<Filters>(DEFAULT_FILTERS);
   const [pendingQ, setPendingQ] = React.useState("");
   const [load, setLoad] = React.useState<LoadState>({ kind: "idle" });
@@ -159,7 +164,7 @@ export function ReportDashboard() {
           | null;
         setLoad({
           kind: "error",
-          message: data?.error ?? `Gagal memuat data (${res.status}).`,
+          message: data?.error ?? t("errLoadData", { status: res.status }),
         });
         return;
       }
@@ -181,10 +186,10 @@ export function ReportDashboard() {
       setLoad({
         kind: "error",
         message:
-          err instanceof Error ? err.message : "Tidak dapat terhubung ke server.",
+          err instanceof Error ? err.message : tCommon("couldNotConnect"),
       });
     }
-  }, [filters]);
+  }, [filters, t, tCommon]);
 
   React.useEffect(() => {
     void fetchData();
@@ -221,56 +226,61 @@ export function ReportDashboard() {
     safePage * PAGE_SIZE + PAGE_SIZE,
   );
 
+  const localeNumber = LOCALE_TAG[locale] ?? "id-ID";
+
   return (
     <div className="space-y-6">
       {/* Stats */}
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          label="Total Masukan"
+          label={t("totalMasukan")}
           value={
             load.kind === "ready"
-              ? load.stats.total.toLocaleString("id-ID")
+              ? load.stats.total.toLocaleString(localeNumber)
               : "—"
           }
           hint={
             load.kind === "ready" && load.total !== load.totalAll
-              ? `dari ${load.totalAll.toLocaleString("id-ID")} total`
+              ? t("fromTotal", {
+                  total: load.totalAll.toLocaleString(localeNumber),
+                })
               : undefined
           }
           icon={<Inbox className="h-5 w-5" />}
           accent="primary"
         />
         <StatCard
-          label="Dengan Identitas"
+          label={t("denganIdentitas")}
           value={
             load.kind === "ready"
-              ? load.stats.identitas.toLocaleString("id-ID")
+              ? load.stats.identitas.toLocaleString(localeNumber)
               : "—"
           }
           icon={<ShieldCheck className="h-5 w-5" />}
           accent="success"
         />
         <StatCard
-          label="Anonim"
+          label={t("anonim")}
           value={
             load.kind === "ready"
-              ? load.stats.anonim.toLocaleString("id-ID")
+              ? load.stats.anonim.toLocaleString(localeNumber)
               : "—"
           }
           icon={<EyeOff className="h-5 w-5" />}
           accent="accent"
         />
         <StatCard
-          label="Bulan Aktif"
+          label={t("bulanAktif")}
           value={
             load.kind === "ready"
-              ? load.stats.perMonth.length.toLocaleString("id-ID")
+              ? load.stats.perMonth.length.toLocaleString(localeNumber)
               : "—"
           }
           hint={
             load.kind === "ready" && load.stats.perMonth.length > 0
-              ? `${formatMonth(load.stats.perMonth[0].month)} – ${formatMonth(
+              ? `${formatMonth(load.stats.perMonth[0].month, locale)} – ${formatMonth(
                   load.stats.perMonth[load.stats.perMonth.length - 1].month,
+                  locale,
                 )}`
               : undefined
           }
@@ -283,7 +293,7 @@ export function ReportDashboard() {
       <section className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
         <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-foreground">
           <Filter className="h-4 w-4 text-primary" />
-          Filter & Pencarian
+          {t("filterTitle")}
           {hasActiveFilters ? (
             <button
               type="button"
@@ -291,7 +301,7 @@ export function ReportDashboard() {
               className="ml-auto inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
             >
               <X className="h-3.5 w-3.5" />
-              Reset filter
+              {t("resetFilter")}
             </button>
           ) : null}
         </div>
@@ -299,7 +309,7 @@ export function ReportDashboard() {
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
           <div className="lg:col-span-2">
             <Label htmlFor="q" className="mb-1.5 block text-xs">
-              Pencarian teks
+              {t("search")}
             </Label>
             <div className="relative">
               <Search
@@ -310,7 +320,7 @@ export function ReportDashboard() {
                 id="q"
                 value={pendingQ}
                 onChange={(e) => setPendingQ(e.target.value)}
-                placeholder="Cari di nama / NIM / isi masukan…"
+                placeholder={t("searchPlaceholderSaran")}
                 className="pl-9"
               />
             </div>
@@ -318,7 +328,7 @@ export function ReportDashboard() {
 
           <div>
             <Label htmlFor="role" className="mb-1.5 block text-xs">
-              Peran
+              {t("peran")}
             </Label>
             <Select
               id="role"
@@ -327,7 +337,7 @@ export function ReportDashboard() {
                 setFilters((f) => ({ ...f, role: e.target.value }))
               }
             >
-              <option value="all">Semua</option>
+              <option value="all">{tCommon("all")}</option>
               {ROLE_OPTIONS.map((r) => (
                 <option key={r} value={r}>
                   {r}
@@ -338,7 +348,7 @@ export function ReportDashboard() {
 
           <div>
             <Label htmlFor="unit" className="mb-1.5 block text-xs">
-              Unit / Prodi
+              {t("unit")}
             </Label>
             <Select
               id="unit"
@@ -347,7 +357,7 @@ export function ReportDashboard() {
                 setFilters((f) => ({ ...f, unit: e.target.value }))
               }
             >
-              <option value="all">Semua</option>
+              <option value="all">{tCommon("all")}</option>
               {unitOptions.map((u) => (
                 <option key={u} value={u}>
                   {u}
@@ -358,7 +368,7 @@ export function ReportDashboard() {
 
           <div>
             <Label htmlFor="mode" className="mb-1.5 block text-xs">
-              Mode
+              {t("mode")}
             </Label>
             <Select
               id="mode"
@@ -370,15 +380,15 @@ export function ReportDashboard() {
                 }))
               }
             >
-              <option value="all">Semua</option>
-              <option value="Tidak">Identitas</option>
-              <option value="Ya">Anonim</option>
+              <option value="all">{tCommon("all")}</option>
+              <option value="Tidak">{tCommon("identitas")}</option>
+              <option value="Ya">{tCommon("anonim")}</option>
             </Select>
           </div>
 
           <div>
             <Label htmlFor="from" className="mb-1.5 block text-xs">
-              Dari tanggal
+              {t("dateFrom")}
             </Label>
             <Input
               id="from"
@@ -391,7 +401,7 @@ export function ReportDashboard() {
           </div>
           <div>
             <Label htmlFor="to" className="mb-1.5 block text-xs">
-              Sampai tanggal
+              {t("dateTo")}
             </Label>
             <Input
               id="to"
@@ -418,7 +428,7 @@ export function ReportDashboard() {
                 load.kind === "loading" && "animate-spin",
               )}
             />
-            Muat ulang
+            {t("reload")}
           </Button>
           <Button
             type="button"
@@ -429,7 +439,7 @@ export function ReportDashboard() {
             className="ml-auto"
           >
             <Download className="h-4 w-4" />
-            Export CSV
+            {t("exportCsv")}
           </Button>
           <Button
             type="button"
@@ -438,7 +448,7 @@ export function ReportDashboard() {
             onClick={onLogout}
           >
             <LogOut className="h-4 w-4" />
-            Keluar
+            {t("keluar")}
           </Button>
         </div>
       </section>
@@ -447,12 +457,12 @@ export function ReportDashboard() {
       {load.kind === "ready" && load.stats.total > 0 ? (
         <section className="grid gap-4 lg:grid-cols-2">
           <BreakdownList
-            title="Per Peran"
+            title={t("perRole")}
             items={Object.entries(load.stats.perRole)}
             total={load.stats.total}
           />
           <BreakdownList
-            title="Per Unit / Program Studi"
+            title={t("perUnit")}
             items={Object.entries(load.stats.perUnit)}
             total={load.stats.total}
           />
@@ -464,7 +474,7 @@ export function ReportDashboard() {
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-3 sm:px-5">
           <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
             <MessageSquareText className="h-4 w-4 text-primary" />
-            Daftar Masukan
+            {t("daftarMasukan")}
             {load.kind === "ready" ? (
               <span className="ml-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                 {load.total}
@@ -473,7 +483,7 @@ export function ReportDashboard() {
           </h2>
           {load.kind === "ready" && rows.length > 0 ? (
             <p className="text-xs text-muted-foreground">
-              Halaman {safePage + 1} dari {totalPages}
+              {t("pageOf", { current: safePage + 1, total: totalPages })}
             </p>
           ) : null}
         </div>
@@ -481,13 +491,13 @@ export function ReportDashboard() {
         {load.kind === "loading" ? (
           <div className="flex items-center justify-center gap-2 px-4 py-16 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
-            Memuat data dari Spreadsheet…
+            {t("loadingFromSheets")}
           </div>
         ) : load.kind === "error" ? (
           <div className="m-4 flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
             <div className="space-y-2">
-              <p className="font-medium">Tidak dapat memuat data.</p>
+              <p className="font-medium">{t("cantLoadData")}</p>
               <p className="text-destructive/90">{load.message}</p>
               <Button
                 size="sm"
@@ -496,7 +506,7 @@ export function ReportDashboard() {
                 className="border-destructive/30 text-destructive hover:bg-destructive/10"
               >
                 <RefreshCw className="h-4 w-4" />
-                Coba lagi
+                {tCommon("tryAgain")}
               </Button>
             </div>
           </div>
@@ -504,12 +514,12 @@ export function ReportDashboard() {
           <div className="flex flex-col items-center justify-center gap-2 px-4 py-16 text-center">
             <Inbox className="h-10 w-10 text-muted-foreground/60" />
             <p className="text-sm font-medium text-foreground">
-              Tidak ada masukan yang cocok.
+              {t("saranNoMatch")}
             </p>
             <p className="text-xs text-muted-foreground">
               {hasActiveFilters
-                ? "Coba longgarkan filter atau reset."
-                : "Belum ada masukan masuk."}
+                ? t("relaxFilter")
+                : t("saranNoneAll")}
             </p>
           </div>
         ) : (
@@ -519,14 +529,14 @@ export function ReportDashboard() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border bg-muted/30 text-xs uppercase tracking-wider text-muted-foreground">
-                    <th className="px-4 py-3 text-left font-medium">Waktu</th>
-                    <th className="px-4 py-3 text-left font-medium">Peran</th>
+                    <th className="px-4 py-3 text-left font-medium">{t("thWaktu")}</th>
+                    <th className="px-4 py-3 text-left font-medium">{t("thPeran")}</th>
                     <th className="px-4 py-3 text-left font-medium">
-                      Unit / Prodi
+                      {t("thUnit")}
                     </th>
-                    <th className="px-4 py-3 text-left font-medium">Mode</th>
-                    <th className="px-4 py-3 text-left font-medium">Nama</th>
-                    <th className="px-4 py-3 text-left font-medium">Masukan</th>
+                    <th className="px-4 py-3 text-left font-medium">{t("thMode")}</th>
+                    <th className="px-4 py-3 text-left font-medium">{t("thNama")}</th>
+                    <th className="px-4 py-3 text-left font-medium">{t("thMasukan")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -541,7 +551,7 @@ export function ReportDashboard() {
                           onClick={() => setOpenRow(open ? null : key)}
                         >
                           <td className="px-4 py-3 text-xs tabular-nums text-muted-foreground">
-                            {formatDateTime(r.timestamp)}
+                            {formatDateTime(r.timestamp, locale)}
                           </td>
                           <td className="px-4 py-3">
                             <RoleBadge role={r.saudaraAdalah} />
@@ -552,18 +562,18 @@ export function ReportDashboard() {
                           <td className="px-4 py-3">
                             {isAnonim ? (
                               <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
-                                <EyeOff className="h-3 w-3" /> Anonim
+                                <EyeOff className="h-3 w-3" /> {tCommon("anonim")}
                               </span>
                             ) : (
                               <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-xs font-medium text-success">
-                                <ShieldCheck className="h-3 w-3" /> Identitas
+                                <ShieldCheck className="h-3 w-3" /> {tCommon("identitas")}
                               </span>
                             )}
                           </td>
                           <td className="px-4 py-3 text-foreground">
                             {isAnonim ? (
                               <span className="text-muted-foreground">
-                                (anonim)
+                                {t("anonimLabel")}
                               </span>
                             ) : (
                               r.nama || "—"
@@ -607,11 +617,11 @@ export function ReportDashboard() {
                           <RoleBadge role={r.saudaraAdalah} />
                           {isAnonim ? (
                             <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
-                              <EyeOff className="h-3 w-3" /> Anonim
+                              <EyeOff className="h-3 w-3" /> {tCommon("anonim")}
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-xs font-medium text-success">
-                              <ShieldCheck className="h-3 w-3" /> Identitas
+                              <ShieldCheck className="h-3 w-3" /> {tCommon("identitas")}
                             </span>
                           )}
                         </div>
@@ -624,7 +634,7 @@ export function ReportDashboard() {
                       </div>
                       <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
                         <span className="font-medium text-foreground">
-                          {isAnonim ? "(anonim)" : r.nama || "—"}
+                          {isAnonim ? t("anonimLabel") : r.nama || "—"}
                         </span>
                         <span>·</span>
                         <span className="truncate">{r.unitKerja || "—"}</span>
@@ -638,7 +648,7 @@ export function ReportDashboard() {
                         {r.masukan || "—"}
                       </p>
                       <p className="text-xs tabular-nums text-muted-foreground">
-                        {formatDateTime(r.timestamp)}
+                        {formatDateTime(r.timestamp, locale)}
                       </p>
                     </button>
                     {open ? (
@@ -655,18 +665,11 @@ export function ReportDashboard() {
             {totalPages > 1 ? (
               <div className="flex items-center justify-between gap-2 border-t border-border px-4 py-3 sm:px-5">
                 <p className="text-xs text-muted-foreground">
-                  Menampilkan{" "}
-                  <span className="font-medium text-foreground tabular-nums">
-                    {safePage * PAGE_SIZE + 1}
-                  </span>
-                  –
-                  <span className="font-medium text-foreground tabular-nums">
-                    {Math.min((safePage + 1) * PAGE_SIZE, rows.length)}
-                  </span>{" "}
-                  dari{" "}
-                  <span className="font-medium text-foreground tabular-nums">
-                    {rows.length}
-                  </span>
+                  {t.rich("showing", {
+                    from: safePage * PAGE_SIZE + 1,
+                    to: Math.min((safePage + 1) * PAGE_SIZE, rows.length),
+                    total: rows.length,
+                  })}
                 </p>
                 <div className="flex items-center gap-1">
                   <Button
@@ -676,7 +679,7 @@ export function ReportDashboard() {
                     disabled={safePage === 0}
                   >
                     <ChevronLeft className="h-4 w-4" />
-                    <span className="hidden sm:inline">Sebelumnya</span>
+                    <span className="hidden sm:inline">{t("prev")}</span>
                   </Button>
                   <Button
                     size="sm"
@@ -686,7 +689,7 @@ export function ReportDashboard() {
                     }
                     disabled={safePage >= totalPages - 1}
                   >
-                    <span className="hidden sm:inline">Berikutnya</span>
+                    <span className="hidden sm:inline">{t("nextPage")}</span>
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                 </div>
@@ -700,9 +703,10 @@ export function ReportDashboard() {
 }
 
 function RoleBadge({ role }: { role: string }) {
+  const t = useTranslations("adminReport");
   if (!role)
     return (
-      <span className="text-xs text-muted-foreground">(belum diisi)</span>
+      <span className="text-xs text-muted-foreground">{t("belumDiisi")}</span>
     );
   const palette: Record<string, string> = {
     DOSEN: "bg-primary/10 text-primary",
@@ -724,23 +728,26 @@ function RoleBadge({ role }: { role: string }) {
 }
 
 function DetailPanel({ row }: { row: SubmissionRow }) {
+  const t = useTranslations("adminReport");
+  const tCommon = useTranslations("common");
+  const locale = useLocale();
   const isAnonim = /ya|anonim/i.test(row.isAnonim);
   return (
     <dl className="grid gap-3 text-sm sm:grid-cols-2">
-      <Field label="Waktu masuk" value={formatDateTime(row.timestamp)} />
+      <Field label={t("dWaktuMasuk")} value={formatDateTime(row.timestamp, locale)} />
       <Field
-        label="Mode"
+        label={t("dMode")}
         value={
           isAnonim ? (
-            <span className="text-accent">Anonim</span>
+            <span className="text-accent">{tCommon("anonim")}</span>
           ) : (
-            <span className="text-success">Identitas</span>
+            <span className="text-success">{tCommon("identitas")}</span>
           )
         }
       />
-      <Field label="Peran" value={row.saudaraAdalah || "—"} />
+      <Field label={t("dPeran")} value={row.saudaraAdalah || "—"} />
       <Field
-        label="Unit / Prodi"
+        label={t("dUnit")}
         value={
           <span className="inline-flex items-center gap-1.5">
             <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
@@ -750,25 +757,25 @@ function DetailPanel({ row }: { row: SubmissionRow }) {
       />
       {!isAnonim ? (
         <>
-          <Field label="Nama" value={row.nama || "—"} />
-          <Field label="NIM / NIP" value={row.nim || "—"} />
+          <Field label={t("dNama")} value={row.nama || "—"} />
+          <Field label={t("dNim")} value={row.nim || "—"} />
         </>
       ) : null}
       <Field
-        label="Masukan / saran"
+        label={t("dMasukan")}
         value={row.masukan || "—"}
         className="sm:col-span-2"
       />
       {row.kronologi ? (
         <Field
-          label="Kronologi kejadian"
+          label={t("dKronologi")}
           value={row.kronologi}
           className="sm:col-span-2"
         />
       ) : null}
       {row.kontak ? (
         <Field
-          label="Kontak (sukarela)"
+          label={t("dKontak")}
           value={row.kontak}
           className="sm:col-span-2"
         />

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   AlertTriangle,
   ShieldAlert,
@@ -78,6 +79,10 @@ const PRODI_FACULTY_LEVEL_VALUE = "__faculty__";
 
 export function WhistleblowerForm() {
   const router = useRouter();
+  const t = useTranslations("whistleblowerForm");
+  const tCommon = useTranslations("common");
+  const tStatus = useTranslations("saranForm");
+  const tCat = useTranslations("whistleblowerForm.categories");
   const [state, setState] = React.useState<FormState>(INITIAL_STATE);
   const [status, setStatus] = React.useState<SubmitStatus>({ kind: "idle" });
   const [units, setUnits] = React.useState<UnitsLoadState>({ kind: "loading" });
@@ -94,7 +99,9 @@ export function WhistleblowerForm() {
         if (!res.ok) {
           setUnits({
             kind: "error",
-            message: data?.error ?? `Gagal memuat unit (${res.status}).`,
+            message:
+              data?.error ??
+              tStatus("errMuatUnit", { status: res.status }),
           });
           return;
         }
@@ -104,7 +111,9 @@ export function WhistleblowerForm() {
         setUnits({
           kind: "error",
           message:
-            err instanceof Error ? err.message : "Gagal memuat unit.",
+            err instanceof Error
+              ? err.message
+              : tCommon("errorLoading"),
         });
       }
     };
@@ -112,7 +121,7 @@ export function WhistleblowerForm() {
     return () => {
       alive = false;
     };
-  }, []);
+  }, [tCommon, tStatus]);
 
   const update = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setState((s) => ({ ...s, [key]: value }));
@@ -131,26 +140,23 @@ export function WhistleblowerForm() {
       : undefined;
 
   const validateClient = (): { ok: true } | { ok: false; message: string } => {
-    if (!role) return { ok: false, message: "Pilih peran Anda." };
+    if (!role) return { ok: false, message: t("errPilihPeran") };
     if (!state.fakultas)
-      return { ok: false, message: "Pilih fakultas Anda." };
+      return { ok: false, message: t("errPilihFakultas") };
     const requireProdi = selectedGroup ? !selectedGroup.hasFacultyLevel : true;
     if (requireProdi && !state.prodi)
-      return { ok: false, message: "Pilih program studi Anda." };
+      return { ok: false, message: t("errPilihProdi") };
     if (!state.kategori)
-      return { ok: false, message: "Pilih kategori pelanggaran." };
+      return { ok: false, message: t("errPilihKategori") };
     if (state.isAnonim === "Tidak" && !state.nama.trim())
-      return { ok: false, message: "Nama wajib diisi jika memilih identitas." };
+      return { ok: false, message: t("errNamaWajib") };
     if (state.detail.trim().length < DETAIL_MIN)
       return {
         ok: false,
-        message: `Detail pelaporan minimal ${DETAIL_MIN} karakter.`,
+        message: t("errDetailMin", { min: DETAIL_MIN }),
       };
     if (!state.setuju)
-      return {
-        ok: false,
-        message: "Anda harus menyetujui pernyataan kebenaran laporan.",
-      };
+      return { ok: false, message: t("errSetuju") };
     return { ok: true };
   };
 
@@ -193,7 +199,8 @@ export function WhistleblowerForm() {
           | null;
         setStatus({
           kind: "error",
-          message: data?.error ?? `Gagal mengirim (${res.status}).`,
+          message:
+            data?.error ?? t("errSubmit", { status: res.status }),
         });
         return;
       }
@@ -211,7 +218,7 @@ export function WhistleblowerForm() {
         message:
           err instanceof Error
             ? err.message
-            : "Tidak dapat terhubung ke server.",
+            : tCommon("couldNotConnect"),
       });
     }
   };
@@ -222,44 +229,39 @@ export function WhistleblowerForm() {
       <div className="flex gap-3 rounded-xl border border-rose-300/60 bg-rose-50/80 p-4 text-sm text-rose-900 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-100">
         <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-rose-600 dark:text-rose-300" />
         <div className="space-y-1">
-          <p className="font-semibold">Pernyataan kerahasiaan & tanggung jawab</p>
-          <p>
-            Identitas pelapor (jika mengisi nama) dilindungi dan hanya diakses
-            oleh tim Komisi Etik / SPI Universitas. Laporan palsu yang sengaja
-            menyesatkan dapat dikenakan sanksi etik / hukum sesuai peraturan
-            yang berlaku.
-          </p>
+          <p className="font-semibold">{t("disclaimerTitle")}</p>
+          <p>{t("disclaimerBody")}</p>
         </div>
       </div>
 
       {/* Section 1: Pelapor */}
       <fieldset className="space-y-4 rounded-xl border border-border bg-card/60 p-5">
         <legend className="px-2 text-sm font-semibold text-foreground">
-          1. Tentang Anda
+          {t("section1")}
         </legend>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <Label htmlFor="wb-role" className="mb-2 block">
-              Saudara adalah <span className="text-rose-600">*</span>
+              {t("saudaraAdalah")} <span className="text-rose-600">*</span>
             </Label>
             <Select
               id="wb-role"
               value={state.saudaraAdalah}
               onChange={(e) => update("saudaraAdalah", e.target.value)}
             >
-              <option value="">— Pilih peran —</option>
+              <option value="">{t("selectRole")}</option>
               {ROLE_OPTIONS.map((r) => (
                 <option key={r} value={r}>
                   {r}
                 </option>
               ))}
-              <option value="Other">Lainnya</option>
+              <option value="Other">{t("lainnya")}</option>
             </Select>
             {state.saudaraAdalah === "Other" ? (
               <Input
                 className="mt-2"
-                placeholder="Tuliskan peran Anda"
+                placeholder={t("lainnyaPlaceholder")}
                 value={state.saudaraOther}
                 onChange={(e) => update("saudaraOther", e.target.value)}
               />
@@ -268,11 +270,12 @@ export function WhistleblowerForm() {
 
           <div>
             <Label className="mb-2 block">
-              Unit kerja / Prodi <span className="text-rose-600">*</span>
+              {t("unitProdi")} <span className="text-rose-600">*</span>
             </Label>
             {units.kind === "loading" ? (
               <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2.5 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" /> Memuat…
+                <Loader2 className="h-4 w-4 animate-spin" />{" "}
+                {tCommon("loadingShort")}…
               </div>
             ) : units.kind === "error" ? (
               <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
@@ -286,7 +289,7 @@ export function WhistleblowerForm() {
                   value={state.fakultas}
                   onChange={(e) => setFakultas(e.target.value)}
                 >
-                  <option value="">— Pilih fakultas —</option>
+                  <option value="">{t("selectFakultas")}</option>
                   {units.groups.map((g) => (
                     <option key={g.fakultas} value={g.fakultas}>
                       {g.fakultas}
@@ -311,13 +314,13 @@ export function WhistleblowerForm() {
                   disabled={!state.fakultas}
                 >
                   {!state.fakultas ? (
-                    <option value="">— Pilih fakultas dulu —</option>
+                    <option value="">{t("selectFakultasFirst")}</option>
                   ) : (
                     <>
-                      <option value="">— Pilih prodi —</option>
+                      <option value="">{t("selectProdi")}</option>
                       {selectedGroup?.hasFacultyLevel ? (
                         <option value={PRODI_FACULTY_LEVEL_VALUE}>
-                          (Tingkat fakultas saja)
+                          {t("facultyLevelOnly")}
                         </option>
                       ) : null}
                       {(selectedGroup?.prodi ?? []).map((p) => (
@@ -337,7 +340,7 @@ export function WhistleblowerForm() {
       {/* Section 2: Privasi */}
       <fieldset className="space-y-4 rounded-xl border border-border bg-card/60 p-5">
         <legend className="px-2 text-sm font-semibold text-foreground">
-          2. Privasi pelapor
+          {t("section2")}
         </legend>
 
         <div className="grid gap-3 sm:grid-cols-2">
@@ -353,10 +356,8 @@ export function WhistleblowerForm() {
           >
             <EyeOff className="mt-0.5 h-5 w-5 shrink-0" />
             <div>
-              <p className="text-sm font-semibold">Anonim (direkomendasikan)</p>
-              <p className="mt-0.5 text-xs opacity-80">
-                Identitas Anda tidak disertakan. Tim hanya menerima laporan.
-              </p>
+              <p className="text-sm font-semibold">{t("anonimTitle")}</p>
+              <p className="mt-0.5 text-xs opacity-80">{t("anonimDescr")}</p>
             </div>
           </button>
           <button
@@ -371,9 +372,9 @@ export function WhistleblowerForm() {
           >
             <Eye className="mt-0.5 h-5 w-5 shrink-0" />
             <div>
-              <p className="text-sm font-semibold">Sertakan identitas</p>
+              <p className="text-sm font-semibold">{t("identitasTitle")}</p>
               <p className="mt-0.5 text-xs opacity-80">
-                Tim dapat menghubungi Anda untuk klarifikasi. Tetap rahasia.
+                {t("identitasDescr")}
               </p>
             </div>
           </button>
@@ -383,35 +384,35 @@ export function WhistleblowerForm() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <Label htmlFor="wb-nama" className="mb-2 block">
-                Nama lengkap <span className="text-rose-600">*</span>
+                {t("namaLengkap")} <span className="text-rose-600">*</span>
               </Label>
               <Input
                 id="wb-nama"
                 value={state.nama}
                 onChange={(e) => update("nama", e.target.value)}
-                placeholder="Nama lengkap Anda"
+                placeholder={t("namaPlaceholder")}
               />
             </div>
             <div>
               <Label htmlFor="wb-nim" className="mb-2 block">
-                NIM / NIP / NIDN
+                {t("nim")}
               </Label>
               <Input
                 id="wb-nim"
                 value={state.nim}
                 onChange={(e) => update("nim", e.target.value)}
-                placeholder="opsional"
+                placeholder={t("nimPlaceholder")}
               />
             </div>
             <div className="sm:col-span-2">
               <Label htmlFor="wb-kontak" className="mb-2 block">
-                Kontak (email / WA)
+                {t("kontak")}
               </Label>
               <Input
                 id="wb-kontak"
                 value={state.kontak}
                 onChange={(e) => update("kontak", e.target.value)}
-                placeholder="opsional, untuk klarifikasi lanjutan"
+                placeholder={t("kontakPlaceholder")}
               />
             </div>
           </div>
@@ -421,12 +422,12 @@ export function WhistleblowerForm() {
       {/* Section 3: Laporan */}
       <fieldset className="space-y-4 rounded-xl border border-border bg-card/60 p-5">
         <legend className="px-2 text-sm font-semibold text-foreground">
-          3. Detail pelaporan
+          {t("section3")}
         </legend>
 
         <div>
           <Label htmlFor="wb-kategori" className="mb-2 block">
-            Kategori pelanggaran <span className="text-rose-600">*</span>
+            {t("kategori")} <span className="text-rose-600">*</span>
           </Label>
           <Select
             id="wb-kategori"
@@ -435,10 +436,10 @@ export function WhistleblowerForm() {
               update("kategori", e.target.value as WhistleblowerCategory | "")
             }
           >
-            <option value="">— Pilih kategori —</option>
+            <option value="">{t("selectKategori")}</option>
             {WHISTLEBLOWER_CATEGORIES.map((c) => (
               <option key={c} value={c}>
-                {c}
+                {tCat(c)}
               </option>
             ))}
           </Select>
@@ -446,33 +447,33 @@ export function WhistleblowerForm() {
 
         <div>
           <Label htmlFor="wb-pihak" className="mb-2 block">
-            Pihak yang terlibat
+            {t("pihakTerlibat")}
           </Label>
           <Input
             id="wb-pihak"
             value={state.pihakTerlibat}
             onChange={(e) => update("pihakTerlibat", e.target.value)}
-            placeholder="Nama / inisial / jabatan (opsional)"
+            placeholder={t("pihakPlaceholder")}
           />
           <p className="mt-1 text-xs text-muted-foreground">
-            Tuliskan jika Anda mengetahui — boleh inisial / jabatan saja.
+            {t("pihakHelp")}
           </p>
         </div>
 
         <div>
           <Label htmlFor="wb-detail" className="mb-2 block">
-            Detail pelaporan <span className="text-rose-600">*</span>
+            {t("detail")} <span className="text-rose-600">*</span>
           </Label>
           <Textarea
             id="wb-detail"
             value={state.detail}
             onChange={(e) => update("detail", e.target.value)}
-            placeholder="Apa yang terjadi? Sejelas mungkin."
+            placeholder={t("detailPlaceholder")}
             rows={5}
             maxLength={DETAIL_MAX}
           />
           <p className="mt-1 flex justify-between text-xs text-muted-foreground">
-            <span>Minimal {DETAIL_MIN} karakter.</span>
+            <span>{t("minChars", { min: DETAIL_MIN })}</span>
             <span>
               {state.detail.length} / {DETAIL_MAX}
             </span>
@@ -481,20 +482,20 @@ export function WhistleblowerForm() {
 
         <div>
           <Label htmlFor="wb-kronologi" className="mb-2 block">
-            Kronologi & bukti pendukung
+            {t("kronologi")}
           </Label>
           <Textarea
             id="wb-kronologi"
             value={state.kronologi}
             onChange={(e) => update("kronologi", e.target.value)}
-            placeholder="Kapan, di mana, urutan kejadian. Sebutkan jika ada bukti foto / dokumen / saksi (opsional)."
+            placeholder={t("kronologiPlaceholder")}
             rows={4}
             maxLength={KRONOLOGI_MAX}
           />
           <p className="mt-1 text-xs text-muted-foreground">
-            Bukti file (foto/dokumen) dapat dikirim menyusul ke email pengelola
-            dengan menyertakan <strong>Case ID</strong> yang akan Anda terima
-            setelah kirim.
+            {t.rich("kronologiHelp", {
+              b: (chunks) => <strong>{chunks}</strong>,
+            })}
           </p>
         </div>
       </fieldset>
@@ -502,7 +503,7 @@ export function WhistleblowerForm() {
       {/* Section 4: Pernyataan */}
       <fieldset className="space-y-3 rounded-xl border border-border bg-card/60 p-5">
         <legend className="px-2 text-sm font-semibold text-foreground">
-          4. Pernyataan
+          {t("section4")}
         </legend>
 
         <label className="flex cursor-pointer items-start gap-3 text-sm">
@@ -513,9 +514,9 @@ export function WhistleblowerForm() {
             className="mt-0.5 h-4 w-4 rounded border-input"
           />
           <span className="text-foreground">
-            Saya menyatakan bahwa informasi yang saya laporkan ini{" "}
-            <strong>benar dan dapat dipertanggungjawabkan</strong>. Saya
-            memahami bahwa laporan palsu dapat berkonsekuensi etik / hukum.
+            {t.rich("agree", {
+              b: (chunks) => <strong>{chunks}</strong>,
+            })}
           </span>
         </label>
       </fieldset>
@@ -537,20 +538,21 @@ export function WhistleblowerForm() {
         {status.kind === "submitting" ? (
           <>
             <Loader2 className="h-4 w-4 animate-spin" />
-            Mengirim laporan…
+            {t("submitting")}
           </>
         ) : (
           <>
             <Send className="h-4 w-4" />
-            Kirim Laporan
+            {t("submit")}
           </>
         )}
       </Button>
 
       <p className="flex items-center gap-2 text-xs text-muted-foreground">
         <AlertTriangle className="h-3.5 w-3.5 text-rose-500" />
-        Setelah dikirim, Anda akan mendapatkan <strong>Case ID</strong> — simpan
-        baik-baik untuk follow-up.
+        {t.rich("afterCaseId", {
+          b: (chunks) => <strong>{chunks}</strong>,
+        })}
       </p>
     </form>
   );

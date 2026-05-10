@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Lock, Loader2, AlertCircle, ShieldCheck, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,9 +19,10 @@ export default function ReportLoginPage() {
 }
 
 function LoginSkeleton() {
+  const tCommon = useTranslations("common");
   return (
     <div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">
-      Memuat…
+      {tCommon("loading")}
     </div>
   );
 }
@@ -28,6 +30,9 @@ function LoginSkeleton() {
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const t = useTranslations("adminLogin");
+  const tCommon = useTranslations("common");
+  const tFooter = useTranslations("footer");
   const next = searchParams.get("next") || "/report";
   const [password, setPassword] = React.useState("");
   const [submitting, setSubmitting] = React.useState(false);
@@ -47,14 +52,14 @@ function LoginForm() {
         const data = (await res.json().catch(() => null)) as
           | { error?: string }
           | null;
-        setError(data?.error ?? "Gagal masuk.");
+        setError(data?.error ?? t("errFail"));
         return;
       }
       router.replace(next);
       router.refresh();
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Tidak dapat terhubung ke server.",
+        err instanceof Error ? err.message : tCommon("couldNotConnect"),
       );
     } finally {
       setSubmitting(false);
@@ -79,10 +84,10 @@ function LoginForm() {
         <div className="mb-8 flex flex-col items-center text-center">
           <BrandMark size={56} />
           <h1 className="mt-4 text-2xl font-semibold tracking-tight text-foreground">
-            Panel Rekap Masukan
+            {t("title")}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Khusus pengelola {SITE_CONFIG.universityName}.
+            {t("intro", { university: SITE_CONFIG.universityName })}
           </p>
         </div>
 
@@ -92,7 +97,7 @@ function LoginForm() {
         >
           <div>
             <Label htmlFor="report-password" className="mb-2 block">
-              Password Akses
+              {t("passwordLabel")}
             </Label>
             <div className="relative">
               <Lock
@@ -104,7 +109,7 @@ function LoginForm() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Masukkan password"
+                placeholder={t("passwordPlaceholder")}
                 autoComplete="current-password"
                 required
                 className="pl-9"
@@ -130,29 +135,28 @@ function LoginForm() {
             {submitting ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Memverifikasi…
+                {t("btnLoading")}
               </>
             ) : (
               <>
                 <ShieldCheck className="h-4 w-4" />
-                Masuk Panel
+                {t("btn")}
               </>
             )}
           </Button>
 
           <p className="text-center text-xs text-muted-foreground">
-            Akses dibatasi internal {SITE_CONFIG.universityShort}. Hubungi
-            pengelola sistem bila lupa password.
+            {t("footer", { short: SITE_CONFIG.universityShort })}
           </p>
         </form>
 
         <p className="mt-6 flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
-          <span>Develop with</span>
+          <span>{tFooter("developWith")}</span>
           <Heart
             className="h-3.5 w-3.5 fill-rose-500 text-rose-500"
-            aria-label="love"
+            aria-label={tFooter("love")}
           />
-          <span>by</span>
+          <span>{tFooter("by")}</span>
           <a
             href="https://weverx.com"
             target="_blank"

@@ -1,4 +1,5 @@
 import { Heart } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { SITE_CONFIG } from "@/lib/site-config";
 import { cn } from "@/lib/utils";
 
@@ -9,6 +10,7 @@ export function SiteFooter({
   className?: string;
   variant?: "full" | "compact";
 }) {
+  const t = useTranslations("footer");
   const year = new Date().getFullYear();
   return (
     <footer
@@ -24,18 +26,20 @@ export function SiteFooter({
               © {year} {SITE_CONFIG.universityName}
             </p>
             <p>
-              {SITE_CONFIG.siteName} · data tercatat pada sistem terpusat{" "}
-              {SITE_CONFIG.universityShort}.
+              {t("site", {
+                site: SITE_CONFIG.siteName,
+                short: SITE_CONFIG.universityShort,
+              })}
             </p>
           </>
         ) : null}
         <p className="flex items-center justify-center gap-1.5">
-          <span>Develop with</span>
+          <span>{t("developWith")}</span>
           <Heart
             className="h-3.5 w-3.5 fill-rose-500 text-rose-500"
-            aria-label="love"
+            aria-label={t("love")}
           />
-          <span>by</span>
+          <span>{t("by")}</span>
           <a
             href="https://weverx.com"
             target="_blank"
