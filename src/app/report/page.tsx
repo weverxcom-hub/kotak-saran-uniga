@@ -1,6 +1,9 @@
+import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
 import { ArrowLeft, Inbox, ShieldAlert, Building2 } from "lucide-react";
 import { BrandMark } from "@/components/brand-mark";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -11,16 +14,23 @@ import { SITE_CONFIG } from "@/lib/site-config";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = {
-  title: "Rekap Masukan",
-  description: `Dashboard rekap masukan ${SITE_CONFIG.siteName} (${SITE_CONFIG.universityName}).`,
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("meta");
+  return {
+    title: t("reportTitle"),
+    description: t("reportDesc", {
+      site: SITE_CONFIG.siteName,
+      university: SITE_CONFIG.universityName,
+    }),
+  };
+}
 
 export default function ReportPage() {
   const session = cookies().get(SESSION_COOKIE_NAME)?.value;
   if (!verifySessionToken(session)) {
     redirect("/report/login");
   }
+  const t = useTranslations("adminCommon");
   return (
     <div className="relative min-h-screen overflow-x-clip">
       <div
@@ -43,7 +53,7 @@ export default function ReportPage() {
               {SITE_CONFIG.universityName}
             </span>
             <span className="text-sm font-semibold text-foreground sm:text-base">
-              Rekap Masukan
+              {t("rekapMasukan")}
             </span>
           </div>
         </div>
@@ -53,35 +63,34 @@ export default function ReportPage() {
             className="hidden items-center gap-1 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground sm:inline-flex"
           >
             <ArrowLeft className="h-4 w-4" />
-            Halaman utama
+            {t("halamanUtama")}
           </Link>
           <ThemeToggle />
         </div>
       </header>
 
       <main className="container pb-16 pt-2">
-        {/* Tabs */}
         <nav className="mb-5 flex items-center gap-1 overflow-x-auto rounded-xl border border-border bg-card/60 p-1 text-sm">
           <span
             aria-current="page"
             className="inline-flex items-center gap-2 whitespace-nowrap rounded-lg bg-primary px-3 py-2 font-medium text-primary-foreground shadow-sm"
           >
             <Inbox className="h-4 w-4" />
-            Kotak Saran
+            {t("tabKotakSaran")}
           </span>
           <Link
             href="/report/whistleblower"
             className="inline-flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground"
           >
             <ShieldAlert className="h-4 w-4" />
-            Whistleblower
+            {t("tabWhistleblower")}
           </Link>
           <Link
             href="/report/units"
             className="inline-flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground"
           >
             <Building2 className="h-4 w-4" />
-            Kelola Unit / Prodi
+            {t("tabUnit")}
           </Link>
         </nav>
 

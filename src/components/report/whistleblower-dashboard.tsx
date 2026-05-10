@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useLocale, useTranslations } from "next-intl";
 import {
   Search,
   Filter,
@@ -35,6 +36,8 @@ import {
 import type { WhistleblowerStatus } from "@/lib/whistleblower-config";
 import type { WhistleblowerRow, WhistleblowerStats } from "@/lib/sheets";
 import { cn } from "@/lib/utils";
+
+const LOCALE_TAG: Record<string, string> = { id: "id-ID", en: "en-US" };
 
 type UnitGroup = {
   fakultas: string;
@@ -123,27 +126,32 @@ function buildQuery(f: Filters): string {
   return sp.toString();
 }
 
-function formatDateTime(iso: string): string {
+function formatDateTime(iso: string, locale: string): string {
   if (!iso) return "—";
   const d = new Date(iso);
   if (isNaN(d.getTime())) return iso;
-  return new Intl.DateTimeFormat("id-ID", {
+  return new Intl.DateTimeFormat(LOCALE_TAG[locale] ?? "id-ID", {
     dateStyle: "medium",
     timeStyle: "short",
     timeZone: "Asia/Jakarta",
   }).format(d);
 }
 
-function formatMonth(month: string): string {
+function formatMonth(month: string, locale: string): string {
   const [y, m] = month.split("-").map(Number);
   if (!y || !m) return month;
-  return new Intl.DateTimeFormat("id-ID", {
+  return new Intl.DateTimeFormat(LOCALE_TAG[locale] ?? "id-ID", {
     year: "numeric",
     month: "short",
   }).format(new Date(Date.UTC(y, m - 1, 1)));
 }
 
 export function WhistleblowerDashboard() {
+  const t = useTranslations("adminReport");
+  const tCommon = useTranslations("common");
+  const tStatus = useTranslations("wbStatus");
+  const tLacak = useTranslations("lacak");
+  const locale = useLocale();
   const [filters, setFilters] = React.useState<Filters>(DEFAULT_FILTERS);
   const [pendingQ, setPendingQ] = React.useState("");
   const [load, setLoad] = React.useState<LoadState>({ kind: "idle" });
@@ -191,7 +199,7 @@ export function WhistleblowerDashboard() {
           | null;
         setLoad({
           kind: "error",
-          message: data?.error ?? `Gagal memuat data (${res.status}).`,
+          message: data?.error ?? t("errLoadData", { status: res.status }),
         });
         return;
       }
@@ -214,10 +222,10 @@ export function WhistleblowerDashboard() {
         message:
           err instanceof Error
             ? err.message
-            : "Tidak dapat terhubung ke server.",
+            : tCommon("couldNotConnect"),
       });
     }
-  }, [filters]);
+  }, [filters, t, tCommon]);
 
   React.useEffect(() => {
     void fetchData();
@@ -266,56 +274,61 @@ export function WhistleblowerDashboard() {
     [],
   );
 
+  const localeNumber = LOCALE_TAG[locale] ?? "id-ID";
+
   return (
     <div className="space-y-6">
       {/* Stats */}
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          label="Total Laporan"
+          label={t("totalLaporan")}
           value={
             load.kind === "ready"
-              ? load.stats.total.toLocaleString("id-ID")
+              ? load.stats.total.toLocaleString(localeNumber)
               : "—"
           }
           hint={
             load.kind === "ready" && load.total !== load.totalAll
-              ? `dari ${load.totalAll.toLocaleString("id-ID")} total`
+              ? t("fromTotal", {
+                  total: load.totalAll.toLocaleString(localeNumber),
+                })
               : undefined
           }
           icon={<ShieldAlert className="h-5 w-5" />}
           accent="primary"
         />
         <StatCard
-          label="Dengan Identitas"
+          label={t("denganIdentitas")}
           value={
             load.kind === "ready"
-              ? load.stats.identitas.toLocaleString("id-ID")
+              ? load.stats.identitas.toLocaleString(localeNumber)
               : "—"
           }
           icon={<ShieldCheck className="h-5 w-5" />}
           accent="success"
         />
         <StatCard
-          label="Anonim"
+          label={t("anonim")}
           value={
             load.kind === "ready"
-              ? load.stats.anonim.toLocaleString("id-ID")
+              ? load.stats.anonim.toLocaleString(localeNumber)
               : "—"
           }
           icon={<EyeOff className="h-5 w-5" />}
           accent="accent"
         />
         <StatCard
-          label="Bulan Aktif"
+          label={t("bulanAktif")}
           value={
             load.kind === "ready"
-              ? load.stats.perMonth.length.toLocaleString("id-ID")
+              ? load.stats.perMonth.length.toLocaleString(localeNumber)
               : "—"
           }
           hint={
             load.kind === "ready" && load.stats.perMonth.length > 0
-              ? `${formatMonth(load.stats.perMonth[0].month)} – ${formatMonth(
+              ? `${formatMonth(load.stats.perMonth[0].month, locale)} – ${formatMonth(
                   load.stats.perMonth[load.stats.perMonth.length - 1].month,
+                  locale,
                 )}`
               : undefined
           }
@@ -328,12 +341,12 @@ export function WhistleblowerDashboard() {
       {load.kind === "ready" && load.stats.total > 0 ? (
         <section className="grid gap-4 lg:grid-cols-2">
           <BreakdownList
-            title="Per Kategori"
+            title={t("perKategori")}
             items={Object.entries(load.stats.perKategori)}
             total={load.stats.total}
           />
           <BreakdownList
-            title="Per Unit / Program Studi"
+            title={t("perUnit")}
             items={Object.entries(load.stats.perUnit)}
             total={load.stats.total}
           />
@@ -344,7 +357,7 @@ export function WhistleblowerDashboard() {
       <section className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
         <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-foreground">
           <Filter className="h-4 w-4 text-rose-600" />
-          Filter & Pencarian
+          {t("filterTitle")}
           {hasActiveFilters ? (
             <button
               type="button"
@@ -352,7 +365,7 @@ export function WhistleblowerDashboard() {
               className="ml-auto inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
             >
               <X className="h-3.5 w-3.5" />
-              Reset filter
+              {t("resetFilter")}
             </button>
           ) : null}
         </div>
@@ -360,7 +373,7 @@ export function WhistleblowerDashboard() {
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
           <div className="lg:col-span-2">
             <Label htmlFor="wb-q" className="mb-1.5 block text-xs">
-              Pencarian teks
+              {t("search")}
             </Label>
             <div className="relative">
               <Search
@@ -371,7 +384,7 @@ export function WhistleblowerDashboard() {
                 id="wb-q"
                 value={pendingQ}
                 onChange={(e) => setPendingQ(e.target.value)}
-                placeholder="Cari di Case ID / nama / detail…"
+                placeholder={t("searchPlaceholderWb")}
                 className="pl-9"
               />
             </div>
@@ -379,7 +392,7 @@ export function WhistleblowerDashboard() {
 
           <div>
             <Label htmlFor="wb-kat" className="mb-1.5 block text-xs">
-              Kategori
+              {t("kategori")}
             </Label>
             <Select
               id="wb-kat"
@@ -388,7 +401,7 @@ export function WhistleblowerDashboard() {
                 setFilters((f) => ({ ...f, kategori: e.target.value }))
               }
             >
-              <option value="all">Semua</option>
+              <option value="all">{tCommon("all")}</option>
               {WHISTLEBLOWER_CATEGORIES.map((c) => (
                 <option key={c} value={c}>
                   {c}
@@ -399,7 +412,7 @@ export function WhistleblowerDashboard() {
 
           <div>
             <Label htmlFor="wb-unit" className="mb-1.5 block text-xs">
-              Unit / Prodi
+              {t("unit")}
             </Label>
             <Select
               id="wb-unit"
@@ -408,7 +421,7 @@ export function WhistleblowerDashboard() {
                 setFilters((f) => ({ ...f, unit: e.target.value }))
               }
             >
-              <option value="all">Semua</option>
+              <option value="all">{tCommon("all")}</option>
               {unitOptions.map((u) => (
                 <option key={u} value={u}>
                   {u}
@@ -419,7 +432,7 @@ export function WhistleblowerDashboard() {
 
           <div>
             <Label htmlFor="wb-mode" className="mb-1.5 block text-xs">
-              Mode
+              {t("mode")}
             </Label>
             <Select
               id="wb-mode"
@@ -431,15 +444,15 @@ export function WhistleblowerDashboard() {
                 }))
               }
             >
-              <option value="all">Semua</option>
-              <option value="Ya">Anonim</option>
-              <option value="Tidak">Identitas</option>
+              <option value="all">{tCommon("all")}</option>
+              <option value="Ya">{tCommon("anonim")}</option>
+              <option value="Tidak">{tCommon("identitas")}</option>
             </Select>
           </div>
 
           <div>
             <Label htmlFor="wb-status" className="mb-1.5 block text-xs">
-              Status
+              {t("status")}
             </Label>
             <Select
               id="wb-status"
@@ -451,10 +464,10 @@ export function WhistleblowerDashboard() {
                 }))
               }
             >
-              <option value="all">Semua</option>
+              <option value="all">{tCommon("all")}</option>
               {WHISTLEBLOWER_STATUSES.map((s) => (
                 <option key={s} value={s}>
-                  {s}
+                  {tStatus(s)}
                 </option>
               ))}
             </Select>
@@ -462,7 +475,7 @@ export function WhistleblowerDashboard() {
 
           <div>
             <Label htmlFor="wb-dfrom" className="mb-1.5 block text-xs">
-              Dari tanggal
+              {t("dateFrom")}
             </Label>
             <Input
               id="wb-dfrom"
@@ -475,7 +488,7 @@ export function WhistleblowerDashboard() {
           </div>
           <div>
             <Label htmlFor="wb-dto" className="mb-1.5 block text-xs">
-              Sampai tanggal
+              {t("dateTo")}
             </Label>
             <Input
               id="wb-dto"
@@ -502,7 +515,7 @@ export function WhistleblowerDashboard() {
                 load.kind === "loading" && "animate-spin",
               )}
             />
-            Muat ulang
+            {t("reload")}
           </Button>
           <Button
             type="button"
@@ -512,7 +525,7 @@ export function WhistleblowerDashboard() {
             disabled={load.kind !== "ready" || load.rows.length === 0}
           >
             <Download className="h-4 w-4" />
-            Export CSV
+            {t("exportCsv")}
           </Button>
         </div>
       </section>
@@ -522,7 +535,7 @@ export function WhistleblowerDashboard() {
         {load.kind === "loading" ? (
           <div className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-border p-12 text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
-            Memuat laporan…
+            {t("loading")}
           </div>
         ) : load.kind === "error" ? (
           <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
@@ -534,13 +547,12 @@ export function WhistleblowerDashboard() {
             <Inbox className="h-10 w-10 text-muted-foreground" />
             <p className="text-sm font-medium text-foreground">
               {load.totalAll === 0
-                ? "Belum ada laporan whistleblower."
-                : "Tidak ada laporan yang cocok dengan filter."}
+                ? t("noReportsAll")
+                : t("noReportsFilter")}
             </p>
             {load.totalAll === 0 ? (
               <p className="max-w-md text-xs text-muted-foreground">
-                Saluran whistleblower aktif. Tab “Whistleblower” pada
-                spreadsheet akan otomatis dibuat saat laporan pertama masuk.
+                {t("wbHint")}
               </p>
             ) : null}
           </div>
@@ -586,28 +598,28 @@ export function WhistleblowerDashboard() {
                                 "animate-spin",
                             )}
                           />
-                          {r.status}
+                          {tStatus(statusKey)}
                         </span>
                         <span className="rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-foreground">
-                          {r.kategori || "Tanpa kategori"}
+                          {r.kategori || "—"}
                         </span>
                         {isAnon ? (
                           <span className="inline-flex items-center gap-1 rounded-md bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-700 dark:bg-slate-500/20 dark:text-slate-200">
                             <EyeOff className="h-3 w-3" />
-                            Anonim
+                            {tCommon("anonim")}
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 rounded-md bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-200">
                             <ShieldCheck className="h-3 w-3" />
-                            {r.nama || "Identitas"}
+                            {r.nama || tCommon("identitas")}
                           </span>
                         )}
                       </div>
                       <p className="text-sm text-foreground line-clamp-2">
-                        {r.detail || "(detail kosong)"}
+                        {r.detail || "—"}
                       </p>
                       <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                        <span>{formatDateTime(r.timestamp)}</span>
+                        <span>{formatDateTime(r.timestamp, locale)}</span>
                         <span>·</span>
                         <span>{r.saudaraAdalah || "—"}</span>
                         <span>·</span>
@@ -625,37 +637,37 @@ export function WhistleblowerDashboard() {
                     <div className="border-t border-border bg-background/40 p-4 text-sm">
                       <StatusEditor row={r} onUpdated={applyRowUpdate} />
                       <dl className="mt-5 grid gap-3 sm:grid-cols-2">
-                        <Field label="Case ID" value={r.caseId} />
+                        <Field label={t("dCaseId")} value={r.caseId} />
                         <Field
-                          label="Waktu lapor"
-                          value={formatDateTime(r.timestamp)}
+                          label={tLacak("tanggalLabel")}
+                          value={formatDateTime(r.timestamp, locale)}
                         />
-                        <Field label="Kategori" value={r.kategori} />
+                        <Field label={t("dKategori")} value={r.kategori} />
                         <Field
-                          label="Pihak Terlibat"
+                          label={t("dPihak")}
                           value={r.pihakTerlibat || "—"}
                         />
-                        <Field label="Peran" value={r.saudaraAdalah || "—"} />
-                        <Field label="Unit / Prodi" value={r.unitKerja || "—"} />
+                        <Field label={t("dPeran")} value={r.saudaraAdalah || "—"} />
+                        <Field label={t("dUnit")} value={r.unitKerja || "—"} />
                         {!isAnon ? (
                           <>
-                            <Field label="Nama" value={r.nama || "—"} />
-                            <Field label="NIM/NIP" value={r.nim || "—"} />
+                            <Field label={t("dNama")} value={r.nama || "—"} />
+                            <Field label={t("dNim")} value={r.nim || "—"} />
                             <Field
-                              label="Kontak"
+                              label={t("dKontak")}
                               value={r.kontak || "—"}
                               span
                             />
                           </>
                         ) : null}
                         <Field
-                          label="Detail Pelaporan"
+                          label={t("dDetail")}
                           value={r.detail || "—"}
                           span
                           multiline
                         />
                         <Field
-                          label="Kronologi & Bukti"
+                          label={t("dKronologi")}
                           value={r.kronologi || "—"}
                           span
                           multiline
@@ -667,8 +679,11 @@ export function WhistleblowerDashboard() {
               );
             })}
             <div className="text-xs text-muted-foreground">
-              Menampilkan {load.rows.length.toLocaleString("id-ID")} dari{" "}
-              {load.totalAll.toLocaleString("id-ID")} laporan.
+              {t("showing", {
+                from: 1,
+                to: load.rows.length.toLocaleString(localeNumber),
+                total: load.totalAll.toLocaleString(localeNumber),
+              })}
             </div>
           </div>
         ) : null}
@@ -731,6 +746,10 @@ function StatusEditor({
     },
   ) => void;
 }) {
+  const t = useTranslations("adminReport");
+  const tCommon = useTranslations("common");
+  const tStatus = useTranslations("wbStatus");
+  const locale = useLocale();
   const [status, setStatus] = React.useState<WhistleblowerStatus>(row.status);
   const [catatan, setCatatan] = React.useState(row.catatanPublik);
   const [save, setSave] = React.useState<SaveState>({ kind: "idle" });
@@ -767,7 +786,7 @@ function StatusEditor({
       if (!res.ok || !data?.ok) {
         setSave({
           kind: "error",
-          message: data?.error ?? `Gagal menyimpan (${res.status}).`,
+          message: data?.error ?? t("errSaveStatus", { status: res.status }),
         });
         return;
       }
@@ -782,23 +801,23 @@ function StatusEditor({
         kind: "error",
         message:
           err instanceof Error
-            ? `Tidak dapat terhubung: ${err.message}`
-            : "Tidak dapat terhubung ke server.",
+            ? `${tCommon("couldNotConnect")}: ${err.message}`
+            : tCommon("couldNotConnect"),
       });
     }
   };
 
   return (
     <section
-      aria-label="Update status laporan"
+      aria-label={t("statusEditTitle")}
       className="rounded-xl border border-border bg-background p-4 shadow-sm"
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Status & catatan publik
+          {t("statusEditTitle")}
         </p>
         <p className="text-xs text-muted-foreground">
-          Update terakhir: {formatDateTime(row.statusUpdatedAt) || "—"}
+          {t("dUpdate")}: {formatDateTime(row.statusUpdatedAt, locale) || "—"}
         </p>
       </div>
 
@@ -808,7 +827,7 @@ function StatusEditor({
             htmlFor={`wb-status-edit-${row.rowIndex}`}
             className="mb-1.5 block text-xs"
           >
-            Status
+            {t("status")}
           </Label>
           <Select
             id={`wb-status-edit-${row.rowIndex}`}
@@ -818,7 +837,7 @@ function StatusEditor({
           >
             {WHISTLEBLOWER_STATUSES.map((s) => (
               <option key={s} value={s}>
-                {s}
+                {tStatus(s)}
               </option>
             ))}
           </Select>
@@ -828,22 +847,22 @@ function StatusEditor({
             htmlFor={`wb-catatan-edit-${row.rowIndex}`}
             className="mb-1.5 block text-xs"
           >
-            Catatan publik{" "}
+            {t("publicNote")}{" "}
             <span className="font-normal text-muted-foreground">
-              (terlihat oleh pelapor di /lacak)
+              {t("publicNoteHint")}
             </span>
           </Label>
           <Textarea
             id={`wb-catatan-edit-${row.rowIndex}`}
             value={catatan}
             onChange={(e) => setCatatan(e.target.value)}
-            placeholder="Mis. Tim sudah menghubungi pelapor via WA pada 12 Mei. Investigasi sedang berjalan."
+            placeholder={t("publicNotePlaceholder")}
             rows={3}
             maxLength={2000}
             disabled={save.kind === "saving"}
           />
           <p className="mt-1 text-[11px] text-muted-foreground">
-            {catatan.length}/2000 karakter
+            {t("charsOf", { count: catatan.length, max: 2000 })}
           </p>
         </div>
       </div>
@@ -859,19 +878,19 @@ function StatusEditor({
           {save.kind === "saving" ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
-              Menyimpan…
+              {t("saving")}
             </>
           ) : (
             <>
               <Save className="h-4 w-4" />
-              Simpan status
+              {t("saveStatus")}
             </>
           )}
         </Button>
         {save.kind === "saved" ? (
           <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 dark:text-emerald-300">
             <CheckCircle2 className="h-3.5 w-3.5" />
-            Tersimpan
+            {t("saved")}
           </span>
         ) : null}
         {save.kind === "error" ? (

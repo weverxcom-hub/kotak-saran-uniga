@@ -1,13 +1,18 @@
 import type { Metadata } from "next";
+import { useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
 import { LacakClient } from "@/components/lacak-client";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { SITE_CONFIG } from "@/lib/site-config";
 
-export const metadata: Metadata = {
-  title: "Lacak Status Laporan",
-  description: `Lacak status laporan whistleblower ${SITE_CONFIG.universityShort} berdasarkan Case ID.`,
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("meta");
+  return {
+    title: t("lacakTitle"),
+    description: t("lacakDesc", { short: SITE_CONFIG.universityShort }),
+  };
+}
 
 export default function LacakPage({
   searchParams,
@@ -15,6 +20,7 @@ export default function LacakPage({
   searchParams?: { caseId?: string };
 }) {
   const initialCaseId = searchParams?.caseId?.trim() ?? "";
+  const t = useTranslations("lacak");
   return (
     <div className="relative flex min-h-screen flex-col overflow-x-clip">
       <div
@@ -34,15 +40,15 @@ export default function LacakPage({
       <main className="container flex-1 pb-16 pt-10 sm:pb-20 sm:pt-14">
         <div className="mx-auto max-w-2xl">
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Whistleblower &middot; Tindak lanjut
+            {t("section")}
           </p>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-            Lacak status laporan Anda
+            {t("title")}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground sm:text-base">
-            Masukkan <strong>Case ID</strong> yang Anda terima setelah submit
-            laporan. Anda akan melihat status terkini &amp; catatan publik dari
-            pengelola. Detail laporan tetap dirahasiakan.
+            {t.rich("intro", {
+              b: (chunks) => <strong>{chunks}</strong>,
+            })}
           </p>
 
           <div className="mt-6 sm:mt-8">
@@ -50,18 +56,23 @@ export default function LacakPage({
           </div>
 
           <div className="mt-8 rounded-xl border border-border bg-card/60 p-4 text-sm text-muted-foreground">
-            <p className="font-medium text-foreground">Lupa Case ID?</p>
+            <p className="font-medium text-foreground">{t("lupaTitle")}</p>
             <p className="mt-1">
-              Case ID hanya ditampilkan satu kali setelah submit laporan
-              (format: <code className="rounded bg-muted px-1 py-0.5 text-foreground">WB-YYYYMMDD-XXXX</code>).
-              Jika Anda kehilangan kode ini, hubungi pengelola di{" "}
-              <a
-                href={`mailto:${SITE_CONFIG.contactEmail}`}
-                className="font-medium text-primary hover:underline"
-              >
-                {SITE_CONFIG.contactEmail}
-              </a>{" "}
-              dengan menjelaskan kapan kira-kira laporan dikirim.
+              {t.rich("lupaDescr", {
+                code: (chunks) => (
+                  <code className="rounded bg-muted px-1 py-0.5 text-foreground">
+                    {chunks}
+                  </code>
+                ),
+                emailLink: () => (
+                  <a
+                    href={`mailto:${SITE_CONFIG.contactEmail}`}
+                    className="font-medium text-primary hover:underline"
+                  >
+                    {SITE_CONFIG.contactEmail}
+                  </a>
+                ),
+              })}
             </p>
           </div>
         </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import {
   Plus,
   Save,
@@ -49,6 +50,7 @@ const EMPTY_FORM: FormState = {
 };
 
 export function UnitsManager() {
+  const t = useTranslations("adminUnits");
   const [load, setLoad] = React.useState<LoadState>({ kind: "idle" });
   const [form, setForm] = React.useState<FormState>(EMPTY_FORM);
   const [submitting, setSubmitting] = React.useState(false);
@@ -67,7 +69,7 @@ export function UnitsManager() {
       if (!res.ok) {
         setLoad({
           kind: "error",
-          message: data?.error ?? `Gagal memuat (${res.status}).`,
+          message: data?.error ?? t("errMuat", { status: res.status }),
         });
         return;
       }
@@ -76,10 +78,10 @@ export function UnitsManager() {
       setLoad({
         kind: "error",
         message:
-          err instanceof Error ? err.message : "Tidak dapat terhubung.",
+          err instanceof Error ? err.message : t("errCantConnect"),
       });
     }
-  }, []);
+  }, [t]);
 
   React.useEffect(() => {
     void refresh();
@@ -104,7 +106,9 @@ export function UnitsManager() {
         | { error?: string }
         | null;
       if (!res.ok) {
-        setGlobalError(data?.error ?? `Gagal menambahkan (${res.status}).`);
+        setGlobalError(
+          data?.error ?? t("errAdd", { status: res.status }),
+        );
         return;
       }
       setForm(EMPTY_FORM);
@@ -147,7 +151,9 @@ export function UnitsManager() {
         | { error?: string }
         | null;
       if (!res.ok) {
-        setGlobalError(data?.error ?? `Gagal menyimpan (${res.status}).`);
+        setGlobalError(
+          data?.error ?? t("errSave", { status: res.status }),
+        );
         return;
       }
       cancelEdit();
@@ -158,12 +164,8 @@ export function UnitsManager() {
   };
 
   const onDelete = async (row: UnitRow) => {
-    if (
-      !confirm(
-        `Hapus unit "${row.fakultas}${row.prodi ? " — " + row.prodi : ""}"? Tindakan ini permanen.`,
-      )
-    )
-      return;
+    const name = `${row.fakultas}${row.prodi ? " — " + row.prodi : ""}`;
+    if (!confirm(t("deleteConfirm", { name }))) return;
     setGlobalError(null);
     setSubmitting(true);
     try {
@@ -174,7 +176,9 @@ export function UnitsManager() {
         | { error?: string }
         | null;
       if (!res.ok) {
-        setGlobalError(data?.error ?? `Gagal menghapus (${res.status}).`);
+        setGlobalError(
+          data?.error ?? t("errDelete", { status: res.status }),
+        );
         return;
       }
       await refresh();
@@ -184,12 +188,7 @@ export function UnitsManager() {
   };
 
   const onSeed = async () => {
-    if (
-      !confirm(
-        "Isi tab Units dengan daftar default Universitas Gajayana Malang? Hanya berjalan kalau tab masih kosong.",
-      )
-    )
-      return;
+    if (!confirm(t("seedConfirm"))) return;
     setGlobalError(null);
     setSeeding(true);
     try {
@@ -198,13 +197,11 @@ export function UnitsManager() {
         | { ok?: boolean; inserted?: number; error?: string }
         | null;
       if (!res.ok) {
-        setGlobalError(data?.error ?? `Gagal seed (${res.status}).`);
+        setGlobalError(data?.error ?? t("errSeed", { status: res.status }));
         return;
       }
       if (data?.inserted === 0) {
-        setGlobalError(
-          "Tab Units sudah berisi data. Tidak ada yang ditambahkan.",
-        );
+        setGlobalError(t("seedAlreadyFilled"));
       }
       await refresh();
     } finally {
@@ -216,8 +213,9 @@ export function UnitsManager() {
   const groups = React.useMemo(() => {
     if (load.kind !== "ready") return [] as Array<{ fakultas: string; rows: UnitRow[] }>;
     const map = new Map<string, UnitRow[]>();
+    const noFaculty = t("tanpaFakultas");
     for (const r of load.rows) {
-      const key = r.fakultas || "(tanpa fakultas)";
+      const key = r.fakultas || noFaculty;
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(r);
     }
@@ -225,7 +223,7 @@ export function UnitsManager() {
       fakultas,
       rows,
     }));
-  }, [load]);
+  }, [load, t]);
 
   return (
     <div className="space-y-6">
@@ -234,14 +232,12 @@ export function UnitsManager() {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2 className="text-base font-semibold text-foreground">
-              Daftar Fakultas &amp; Program Studi
+              {t("title")}
             </h2>
-            <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-              Tambah, ubah, atau nonaktifkan unit yang muncul di form publik.
-              Data tersimpan di tab <code className="rounded bg-muted px-1">Units</code>{" "}
-              pada Google Spreadsheet. Perubahan baru terlihat di form publik
-              dalam ~1 menit (cache server-side).
-            </p>
+            <p
+              className="mt-1 max-w-2xl text-sm text-muted-foreground"
+              dangerouslySetInnerHTML={{ __html: t.raw("intro") as string }}
+            />
           </div>
           <div className="flex flex-wrap gap-2">
             <Button
@@ -256,7 +252,7 @@ export function UnitsManager() {
                   "h-4 w-4 " + (load.kind === "loading" ? "animate-spin" : "")
                 }
               />
-              Muat ulang
+              {t("reload")}
             </Button>
             <Button
               type="button"
@@ -267,11 +263,11 @@ export function UnitsManager() {
             >
               {seeding ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" /> Mengisi…
+                  <Loader2 className="h-4 w-4 animate-spin" /> {t("seeding")}
                 </>
               ) : (
                 <>
-                  <Sparkles className="h-4 w-4" /> Isi default UNIGA Malang
+                  <Sparkles className="h-4 w-4" /> {t("seedDefault")}
                 </>
               )}
             </Button>
@@ -282,12 +278,12 @@ export function UnitsManager() {
       {/* Add form */}
       <section className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
         <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
-          <Plus className="h-4 w-4 text-primary" /> Tambah unit baru
+          <Plus className="h-4 w-4 text-primary" /> {t("addNew")}
         </h3>
         <form onSubmit={onCreate} className="grid gap-3 sm:grid-cols-12">
           <div className="sm:col-span-5">
             <Label htmlFor="add-fakultas" className="mb-1.5 block text-xs">
-              Fakultas <span className="text-destructive">*</span>
+              {t("fakultas")} <span className="text-destructive">*</span>
             </Label>
             <Input
               id="add-fakultas"
@@ -295,14 +291,15 @@ export function UnitsManager() {
               onChange={(e) =>
                 setForm((f) => ({ ...f, fakultas: e.target.value }))
               }
-              placeholder="mis. FAKULTAS TEKNIK DAN INFORMATIKA"
+              placeholder={t("fakultasPlaceholder")}
               required
               disabled={submitting}
             />
           </div>
           <div className="sm:col-span-4">
             <Label htmlFor="add-prodi" className="mb-1.5 block text-xs">
-              Prodi <span className="text-muted-foreground">(opsional)</span>
+              {t("prodi")}{" "}
+              <span className="text-muted-foreground">{t("prodiHint")}</span>
             </Label>
             <Input
               id="add-prodi"
@@ -310,13 +307,13 @@ export function UnitsManager() {
               onChange={(e) =>
                 setForm((f) => ({ ...f, prodi: e.target.value }))
               }
-              placeholder="mis. SISTEM INFORMASI"
+              placeholder={t("prodiPlaceholder")}
               disabled={submitting}
             />
           </div>
           <div className="sm:col-span-2">
             <Label htmlFor="add-urutan" className="mb-1.5 block text-xs">
-              Urutan
+              {t("urutan")}
             </Label>
             <Input
               id="add-urutan"
@@ -326,7 +323,7 @@ export function UnitsManager() {
               onChange={(e) =>
                 setForm((f) => ({ ...f, urutan: e.target.value }))
               }
-              placeholder="9999"
+              placeholder={t("urutanPlaceholder")}
               disabled={submitting}
             />
           </div>
@@ -343,14 +340,13 @@ export function UnitsManager() {
               ) : (
                 <Plus className="h-4 w-4" />
               )}
-              <span className="sr-only sm:not-sr-only">Tambah</span>
+              <span className="sr-only sm:not-sr-only">{t("tambah")}</span>
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground sm:col-span-12">
-            Kosongkan kolom <strong>Prodi</strong> kalau ini entri tingkat
-            fakultas (mis. layanan dekanat). Urutan kecil tampil dulu — biasakan
-            kelipatan 10 supaya mudah disisipkan.
-          </p>
+          <p
+            className="text-xs text-muted-foreground sm:col-span-12"
+            dangerouslySetInnerHTML={{ __html: t.raw("addHelp") as string }}
+          />
         </form>
       </section>
 
@@ -365,7 +361,7 @@ export function UnitsManager() {
       <section className="rounded-2xl border border-border bg-card shadow-sm">
         <div className="flex items-center justify-between border-b border-border px-4 py-3 sm:px-5">
           <h3 className="text-sm font-semibold text-foreground">
-            Daftar tersimpan
+            {t("tersimpan")}
             {load.kind === "ready" ? (
               <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                 {load.rows.length}
@@ -376,7 +372,7 @@ export function UnitsManager() {
 
         {load.kind === "idle" || load.kind === "loading" ? (
           <div className="flex items-center justify-center gap-2 px-4 py-12 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" /> Memuat…
+            <Loader2 className="h-4 w-4 animate-spin" /> {t("saveLoading")}
           </div>
         ) : load.kind === "error" ? (
           <div className="m-4 flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
@@ -386,12 +382,14 @@ export function UnitsManager() {
         ) : load.rows.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-2 px-4 py-12 text-center">
             <p className="text-sm font-medium text-foreground">
-              Belum ada unit.
+              {t("noUnits")}
             </p>
-            <p className="max-w-md text-xs text-muted-foreground">
-              Klik <strong>Isi default UNIGA Malang</strong> untuk seed cepat, atau
-              tambah manual lewat form di atas.
-            </p>
+            <p
+              className="max-w-md text-xs text-muted-foreground"
+              dangerouslySetInnerHTML={{
+                __html: t.raw("noUnitsHint") as string,
+              }}
+            />
           </div>
         ) : (
           <div className="divide-y divide-border">
@@ -412,7 +410,7 @@ export function UnitsManager() {
                           <div className="grid gap-2 sm:grid-cols-12">
                             <div className="sm:col-span-5">
                               <Label className="mb-1 block text-[11px]">
-                                Fakultas
+                                {t("fakultas")}
                               </Label>
                               <Input
                                 value={editForm.fakultas}
@@ -427,7 +425,7 @@ export function UnitsManager() {
                             </div>
                             <div className="sm:col-span-3">
                               <Label className="mb-1 block text-[11px]">
-                                Prodi
+                                {t("prodi")}
                               </Label>
                               <Input
                                 value={editForm.prodi}
@@ -442,7 +440,7 @@ export function UnitsManager() {
                             </div>
                             <div className="sm:col-span-2">
                               <Label className="mb-1 block text-[11px]">
-                                Urutan
+                                {t("urutan")}
                               </Label>
                               <Input
                                 type="number"
@@ -470,7 +468,7 @@ export function UnitsManager() {
                                   disabled={submitting}
                                   className="h-4 w-4 rounded border-input"
                                 />
-                                Aktif
+                                {t("rowAktif")}
                               </label>
                             </div>
                             <div className="flex flex-wrap gap-2 sm:col-span-12">
@@ -488,7 +486,7 @@ export function UnitsManager() {
                                 ) : (
                                   <Save className="h-4 w-4" />
                                 )}
-                                Simpan
+                                {t("saveBtn")}
                               </Button>
                               <Button
                                 type="button"
@@ -497,7 +495,7 @@ export function UnitsManager() {
                                 onClick={cancelEdit}
                                 disabled={submitting}
                               >
-                                <X className="h-4 w-4" /> Batal
+                                <X className="h-4 w-4" /> {t("cancelBtn")}
                               </Button>
                             </div>
                           </div>
@@ -507,24 +505,26 @@ export function UnitsManager() {
                               <p className="text-sm font-medium text-foreground">
                                 {row.prodi || (
                                   <span className="italic text-muted-foreground">
-                                    (tingkat fakultas)
+                                    {t("facultyLevelLabel")}
                                   </span>
                                 )}
                               </p>
                               <p className="mt-0.5 flex flex-wrap gap-x-3 text-xs text-muted-foreground">
                                 <span>
-                                  id: <code>{row.id}</code>
+                                  {t("rowId")} <code>{row.id}</code>
                                 </span>
-                                <span>urutan: {row.urutan}</span>
+                                <span>
+                                  {t("rowUrutan")} {row.urutan}
+                                </span>
                                 {row.aktif ? (
                                   <span className="inline-flex items-center gap-1 text-success">
                                     <CheckCircle2 className="h-3.5 w-3.5" />
-                                    Aktif
+                                    {t("rowAktif")}
                                   </span>
                                 ) : (
                                   <span className="inline-flex items-center gap-1 text-muted-foreground">
                                     <XCircle className="h-3.5 w-3.5" />
-                                    Nonaktif
+                                    {t("rowNonaktif")}
                                   </span>
                                 )}
                               </p>
@@ -537,7 +537,7 @@ export function UnitsManager() {
                                 onClick={() => startEdit(row)}
                                 disabled={submitting}
                               >
-                                <Pencil className="h-3.5 w-3.5" /> Ubah
+                                <Pencil className="h-3.5 w-3.5" /> {t("edit")}
                               </Button>
                               <Button
                                 type="button"
@@ -547,7 +547,7 @@ export function UnitsManager() {
                                 disabled={submitting}
                                 className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                               >
-                                <Trash2 className="h-3.5 w-3.5" /> Hapus
+                                <Trash2 className="h-3.5 w-3.5" /> {t("delete")}
                               </Button>
                             </div>
                           </div>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { SITE_CONFIG } from "@/lib/site-config";
@@ -14,6 +15,7 @@ import {
 } from "lucide-react";
 
 export default function Home() {
+  const t = useTranslations("home");
   return (
     <div className="relative flex min-h-screen flex-col overflow-x-clip">
       <div
@@ -36,22 +38,20 @@ export default function Home() {
         <section className="mx-auto max-w-3xl text-center">
           <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-accent/40 bg-accent/15 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-accent-foreground dark:bg-accent/20 dark:text-accent">
             <Sparkles className="h-3.5 w-3.5" />
-            {SITE_CONFIG.tagline}
+            {t("tagline", { short: SITE_CONFIG.universityShort })}
           </div>
           <h1 className="mt-5 text-balance text-3xl font-semibold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
-            Suarakan masukan Anda untuk{" "}
+            {t("title")}{" "}
             <span className="gradient-text">{SITE_CONFIG.universityShort}</span>.
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-pretty text-base text-muted-foreground sm:text-lg">
-            Pilih saluran yang sesuai. Saran &amp; kritik untuk masukan
-            layanan, atau Whistleblower untuk laporan pelanggaran serius.
-            Identitas Anda dijaga &mdash; opsi anonim tersedia di kedua jalur.
+            {t("intro")}
           </p>
         </section>
 
         {/* Two-card chooser */}
         <section
-          aria-label="Pilih saluran"
+          aria-label={t("chooserAria")}
           className="mt-10 grid gap-5 sm:mt-12 lg:grid-cols-2 lg:gap-7"
         >
           {/* Saran & Kritik */}
@@ -68,25 +68,23 @@ export default function Home() {
                 <MessageSquareHeart className="h-5 w-5" />
               </div>
               <span className="rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
-                Untuk umum
+                {t("saranBadge")}
               </span>
             </div>
             <h2 className="relative mt-5 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-              Saran &amp; Kritik
+              {t("saranTitle")}
             </h2>
             <p className="relative mt-2 text-sm text-muted-foreground sm:text-base">
-              Sampaikan masukan terhadap layanan akademik, non-akademik, dan
-              sarana prasarana di seluruh fakultas &amp; unit{" "}
-              {SITE_CONFIG.universityShort}.
+              {t("saranDescr", { short: SITE_CONFIG.universityShort })}
             </p>
             <ul className="relative mt-5 space-y-2 text-sm text-foreground/90">
-              <CardBullet>Cocok untuk apresiasi, kritik, &amp; usulan perbaikan</CardBullet>
-              <CardBullet>Identitas atau anonim &mdash; pilih sesuai kenyamanan</CardBullet>
-              <CardBullet>Wajib pilih fakultas / prodi yang relevan</CardBullet>
+              <CardBullet>{t("saranBullet1")}</CardBullet>
+              <CardBullet>{t("saranBullet2")}</CardBullet>
+              <CardBullet>{t("saranBullet3")}</CardBullet>
             </ul>
             <div className="relative mt-auto pt-7">
               <span className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition group-hover:gap-3">
-                Kirim saran
+                {t("saranCta")}
                 <ArrowRight className="h-4 w-4 transition" />
               </span>
             </div>
@@ -106,25 +104,23 @@ export default function Home() {
                 <ShieldAlert className="h-5 w-5" />
               </div>
               <span className="rounded-full border border-rose-300/50 bg-rose-100/70 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-rose-800 dark:border-rose-500/40 dark:bg-rose-500/15 dark:text-rose-200">
-                Saluran khusus
+                {t("wbBadge")}
               </span>
             </div>
             <h2 className="relative mt-5 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-              Whistleblower
+              {t("wbTitle")}
             </h2>
             <p className="relative mt-2 text-sm text-muted-foreground sm:text-base">
-              Laporkan dugaan pelanggaran serius: korupsi/gratifikasi,
-              kekerasan / pelecehan, kecurangan akademik, konflik
-              kepentingan, atau pelanggaran tata tertib pegawai.
+              {t("wbDescr")}
             </p>
             <ul className="relative mt-5 space-y-2 text-sm text-foreground/90">
-              <CardBullet>Default anonim aktif &mdash; identitas opsional</CardBullet>
-              <CardBullet>Setiap laporan dapat Case ID untuk follow-up</CardBullet>
-              <CardBullet>Akses laporan dibatasi internal pengelola</CardBullet>
+              <CardBullet>{t("wbBullet1")}</CardBullet>
+              <CardBullet>{t("wbBullet2")}</CardBullet>
+              <CardBullet>{t("wbBullet3")}</CardBullet>
             </ul>
             <div className="relative mt-auto pt-7">
               <span className="inline-flex items-center gap-2 rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition group-hover:gap-3 dark:bg-rose-500">
-                Lapor pelanggaran
+                {t("wbCta")}
                 <ArrowRight className="h-4 w-4 transition" />
               </span>
             </div>
@@ -135,18 +131,20 @@ export default function Home() {
         <section className="mt-10 grid gap-3 sm:grid-cols-3">
           <Highlight
             icon={<EyeOff className="h-4 w-4" />}
-            title="Opsi anonim"
-            description="Tersedia di kedua saluran tanpa tracking IP."
+            title={t("trustAnonimTitle")}
+            description={t("trustAnonimDescr")}
           />
           <Highlight
             icon={<Lock className="h-4 w-4" />}
-            title="Tersimpan aman"
-            description={`Hanya pengelola ${SITE_CONFIG.universityShort} yang dapat membaca.`}
+            title={t("trustSecureTitle")}
+            description={t("trustSecureDescr", {
+              short: SITE_CONFIG.universityShort,
+            })}
           />
           <Highlight
             icon={<ShieldCheck className="h-4 w-4" />}
-            title="Tindak lanjut transparan"
-            description="Status & catatan publik dapat dilacak via Case ID."
+            title={t("trustTrackTitle")}
+            description={t("trustTrackDescr")}
           />
         </section>
 
@@ -158,11 +156,10 @@ export default function Home() {
             </div>
             <div>
               <p className="text-sm font-semibold text-foreground sm:text-base">
-                Sudah pernah lapor whistleblower?
+                {t("lacakBoxTitle")}
               </p>
               <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">
-                Lacak status laporan Anda dengan Case ID yang Anda terima
-                setelah submit.
+                {t("lacakBoxDescr")}
               </p>
             </div>
           </div>
@@ -171,7 +168,7 @@ export default function Home() {
             className="mt-4 inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-semibold text-foreground transition hover:bg-muted/60 sm:mt-0 sm:shrink-0"
           >
             <Search className="h-4 w-4" />
-            Lacak Case ID
+            {t("lacakBoxCta")}
             <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         </section>
