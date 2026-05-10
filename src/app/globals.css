@@ -3,10 +3,10 @@
 @tailwind utilities;
 
 /*
- * UNIGA palette — navy biru tua + emas/kuning sebagai aksen, mengikuti
+ * UNIGA Malang palette — navy biru tua + emas/kuning sebagai aksen, mengikuti
  * identitas Universitas Gajayana Malang (dasar biru navy, sorot kuning emas).
- *  - primary  : UNIGA navy
- *  - accent   : UNIGA gold (untuk gradient-text, tombol gradient, highlight)
+ *  - primary  : UNIGA Malang navy
+ *  - accent   : UNIGA Malang gold (gradient-text, tombol gradient, highlight)
  *  - destructive tetap merah, success tetap hijau (untuk fungsional UI).
  */
 @layer base {

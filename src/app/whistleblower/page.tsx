@@ -6,7 +6,7 @@ import { WhistleblowerForm } from "@/components/whistleblower-form";
 import { SITE_CONFIG } from "@/lib/site-config";
 
 export const metadata = {
-  title: `Whistleblower — Lapor Pelanggaran · ${SITE_CONFIG.universityShort}`,
+  title: "Whistleblower — Lapor Pelanggaran",
   description: `Saluran resmi pelaporan pelanggaran etik, korupsi, kekerasan, dan kecurangan akademik di ${SITE_CONFIG.universityName}.`,
 };
 

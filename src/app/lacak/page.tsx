@@ -5,7 +5,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { SITE_CONFIG } from "@/lib/site-config";
 
 export const metadata: Metadata = {
-  title: `Lacak Status Laporan · ${SITE_CONFIG.universityShort}`,
+  title: "Lacak Status Laporan",
   description: `Lacak status laporan whistleblower ${SITE_CONFIG.universityShort} berdasarkan Case ID.`,
 };
 

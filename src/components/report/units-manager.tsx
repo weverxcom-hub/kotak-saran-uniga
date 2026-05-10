@@ -271,7 +271,7 @@ export function UnitsManager() {
                 </>
               ) : (
                 <>
-                  <Sparkles className="h-4 w-4" /> Isi default UNIGA
+                  <Sparkles className="h-4 w-4" /> Isi default UNIGA Malang
                 </>
               )}
             </Button>
@@ -389,7 +389,7 @@ export function UnitsManager() {
               Belum ada unit.
             </p>
             <p className="max-w-md text-xs text-muted-foreground">
-              Klik <strong>Isi default UNIGA</strong> untuk seed cepat, atau
+              Klik <strong>Isi default UNIGA Malang</strong> untuk seed cepat, atau
               tambah manual lewat form di atas.
             </p>
           </div>

@@ -6,7 +6,7 @@ import { CaseIdCopy } from "@/components/case-id-copy";
 import { SITE_CONFIG } from "@/lib/site-config";
 
 export const metadata = {
-  title: `Laporan Diterima — Whistleblower ${SITE_CONFIG.universityShort}`,
+  title: "Laporan Diterima — Whistleblower",
   description: "Laporan whistleblower berhasil dikirim. Simpan Case ID Anda.",
 };
 
