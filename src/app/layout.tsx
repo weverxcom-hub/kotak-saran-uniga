@@ -40,10 +40,10 @@ export const metadata: Metadata = {
     "saran mahasiswa",
   ],
   authors: [{ name: SITE_CONFIG.universityName }],
-  icons: {
-    icon: [{ url: "/favicon.ico", sizes: "any" }],
-    apple: "/apple-touch-icon.png",
-  },
+  // Favicon, icon (Android/PWA), dan apple-icon di-auto-discover Next.js dari
+  // file `src/app/{favicon.ico,icon.png,apple-icon.png}` — jadi metadata.icons
+  // tidak perlu di-set manual. Lihat:
+  // https://nextjs.org/docs/app/api-reference/file-conventions/metadata/app-icons
   openGraph: {
     title: OG_TITLE,
     description: OG_DESCRIPTION,
