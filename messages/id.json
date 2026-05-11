@@ -259,7 +259,7 @@
     "catatanEmpty": "Belum ada catatan publik. Silakan cek kembali nanti.",
     "privacyNote": "Demi keamanan, isi laporan, identitas pelapor, dan kontak <b>tidak</b> ditampilkan di halaman ini meskipun Case ID cocok.",
     "lupaTitle": "Lupa Case ID?",
-    "lupaDescr": "Case ID hanya ditampilkan satu kali setelah submit laporan (format: <code>WB-YYYYMMDD-XXXX</code>). Jika Anda kehilangan kode ini, hubungi pengelola di {emailLink} dengan menjelaskan kapan kira-kira laporan dikirim.",
+    "lupaDescr": "Case ID hanya ditampilkan satu kali setelah submit laporan (format: <code>WB-YYYYMMDD-XXXX</code>). Jika Anda kehilangan kode ini, hubungi pengelola di <emailLink>email pengelola</emailLink> dengan menjelaskan kapan kira-kira laporan dikirim.",
     "status": {
       "Diterima": {
         "label": "Diterima",
