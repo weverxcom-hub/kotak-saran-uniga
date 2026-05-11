@@ -259,7 +259,7 @@
     "catatanEmpty": "No public note yet. Please check back later.",
     "privacyNote": "For security, the report content, reporter identity, and contact info are <b>not</b> shown on this page even when the Case ID matches.",
     "lupaTitle": "Forgot your Case ID?",
-    "lupaDescr": "The Case ID is shown only once after submitting your report (format: <code>WB-YYYYMMDD-XXXX</code>). If you lost the code, contact the admin at {emailLink} explaining roughly when the report was submitted.",
+    "lupaDescr": "The Case ID is shown only once after submitting your report (format: <code>WB-YYYYMMDD-XXXX</code>). If you lost the code, contact the admin at <emailLink>admin email</emailLink> explaining roughly when the report was submitted.",
     "status": {
       "Diterima": {
         "label": "Received",
