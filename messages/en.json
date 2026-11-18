@@ -170,7 +170,7 @@
   },
   "whistleblowerPage": {
     "badge": "Official misconduct reporting channel",
-    "title": "Report misconduct via the {wb} channel.",
+    "title": "Report misconduct via the <wb>whistleblower</wb> channel.",
     "wb": "whistleblower",
     "intro": "This channel is reserved for reporting suspected ethics violations, corruption, harassment, academic fraud, and staff conduct violations at {university}. The reporter's identity is protected.",
     "altLine_pre": "For ordinary feedback / service improvement suggestions, please use ",
