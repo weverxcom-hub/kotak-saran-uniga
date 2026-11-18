@@ -170,7 +170,7 @@
   },
   "whistleblowerPage": {
     "badge": "Saluran resmi laporan pelaporan pelanggaran",
-    "title": "Laporkan pelanggaran melalui jalur {wb}.",
+    "title": "Laporkan pelanggaran melalui jalur <wb>whistleblower</wb>.",
     "wb": "whistleblower",
     "intro": "Saluran ini khusus untuk melaporkan dugaan pelanggaran etik, korupsi, kekerasan/pelecehan, kecurangan akademik, dan pelanggaran tata tertib di lingkungan {university}. Identitas pelapor dilindungi.",
     "altLine_pre": "Untuk masukan / saran perbaikan layanan biasa, silakan gunakan ",
