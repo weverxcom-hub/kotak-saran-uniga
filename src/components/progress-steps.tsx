@@ -36,7 +36,7 @@ export function ProgressSteps({
                     isCompleted
                       ? "bg-success text-success-foreground"
                       : isActive
-                        ? "bg-primary text-primary-foreground shadow-md"
+                        ? "bg-primary text-primary-foreground"
                         : "bg-muted text-muted-foreground",
                   )}
                 >

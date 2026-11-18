@@ -4,11 +4,10 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Menu, X, LogIn } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { BrandMark } from "@/components/brand-mark";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguageToggle } from "@/components/language-toggle";
-import { Button } from "@/components/ui/button";
 import { SITE_CONFIG } from "@/lib/site-config";
 import { cn } from "@/lib/utils";
 
@@ -55,38 +54,39 @@ export function SiteNav() {
     href === "/" ? pathname === "/" : pathname.startsWith(href);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border/60 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
-      <div className="container flex h-14 items-center gap-3 sm:h-16">
+    <header className="sticky top-0 z-40 border-b border-border bg-background">
+      {/* Garis emas tipis: penanda identitas UNIGA, seperti kop surat. */}
+      <div aria-hidden className="h-1 bg-accent" />
+      <div className="container flex h-16 max-w-5xl items-center gap-4">
         <Link
           href="/"
-          className="flex min-w-0 items-center gap-2.5 outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-md"
+          className="flex min-w-0 items-center gap-3 rounded-sm outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
-          <BrandMark size={36} />
-          <div className="hidden min-w-0 flex-col leading-tight sm:flex">
-            <span className="truncate text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-              {SITE_CONFIG.universityName}
-            </span>
-            <span className="truncate text-sm font-semibold text-foreground">
+          <BrandMark size={34} />
+          <span className="flex min-w-0 flex-col leading-tight">
+            <span className="truncate font-serif text-[1.05rem] font-semibold text-foreground">
               {SITE_CONFIG.siteName}
             </span>
-          </div>
-          <span className="text-sm font-semibold text-foreground sm:hidden">
-            {SITE_CONFIG.siteName}
+            <span className="hidden truncate text-xs text-muted-foreground sm:block">
+              {SITE_CONFIG.universityName}
+            </span>
           </span>
         </Link>
 
         <nav
           aria-label={t("main")}
-          className="ml-auto hidden items-center gap-1 lg:flex"
+          className="ml-auto hidden items-center gap-6 lg:flex"
         >
-          {NAV_HREFS.map((href) => (
+          {NAV_HREFS.filter((h) => h !== "/").map((href) => (
             <Link
               key={href}
               href={href}
+              aria-current={isActive(href) ? "page" : undefined}
               className={cn(
-                "relative rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition hover:bg-muted/60 hover:text-foreground",
-                isActive(href) &&
-                  "text-foreground after:absolute after:inset-x-3 after:-bottom-px after:h-0.5 after:rounded-full after:bg-accent",
+                "border-b-2 py-1 text-sm font-medium transition-colors",
+                isActive(href)
+                  ? "border-accent text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground",
               )}
             >
               {t(NAV_KEY[href])}
@@ -94,69 +94,45 @@ export function SiteNav() {
           ))}
         </nav>
 
-        <div className="ml-auto flex items-center gap-1.5 lg:ml-0">
-          <LanguageToggle />
-          <ThemeToggle />
-          <Link
-            href="/report/login"
-            className="hidden lg:inline-flex"
-            aria-label={t("loginAdmin")}
-          >
-            <Button type="button" variant="outline" size="sm">
-              <LogIn className="h-4 w-4" />
-              {t("loginAdmin")}
-            </Button>
-          </Link>
+        <div className="ml-auto flex items-center gap-2 lg:ml-2">
+          <LanguageToggle className="hidden sm:inline-flex" />
+          <ThemeToggle className="hidden sm:inline-flex" />
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground lg:hidden"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md text-foreground hover:bg-muted lg:hidden"
             aria-label={open ? t("closeMenu") : t("openMenu")}
             aria-expanded={open}
             aria-controls="site-nav-mobile"
           >
-            {open ? (
-              <X className="h-5 w-5" />
-            ) : (
-              <Menu className="h-5 w-5" />
-            )}
+            {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </div>
       </div>
 
-      {/* Mobile menu */}
-      <div
-        id="site-nav-mobile"
-        className={cn(
-          "lg:hidden",
-          open ? "block" : "hidden",
-        )}
-      >
+      {/* Menu HP: tautan besar + pilihan bahasa & tema di bawahnya. */}
+      <div id="site-nav-mobile" className={cn("lg:hidden", open ? "block" : "hidden")}>
         <nav
           aria-label={t("mainMobile")}
-          className="container flex flex-col gap-1 border-t border-border/60 py-3"
+          className="container flex max-w-5xl flex-col border-t border-border pb-4"
         >
           {NAV_HREFS.map((href) => (
             <Link
               key={href}
               href={href}
+              aria-current={isActive(href) ? "page" : undefined}
               className={cn(
-                "rounded-md px-3 py-2.5 text-sm font-medium transition",
-                isActive(href)
-                  ? "bg-primary/10 text-foreground"
-                  : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                "border-b border-border py-3 text-base",
+                isActive(href) ? "font-semibold text-foreground" : "text-muted-foreground",
               )}
             >
               {t(NAV_KEY[href])}
             </Link>
           ))}
-          <Link
-            href="/report/login"
-            className="mt-1 inline-flex items-center justify-center gap-2 rounded-md border border-border bg-card px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted/60"
-          >
-            <LogIn className="h-4 w-4" />
-            {t("loginAdmin")}
-          </Link>
+          <div className="mt-4 flex items-center gap-3 sm:hidden">
+            <LanguageToggle />
+            <ThemeToggle />
+          </div>
         </nav>
       </div>
     </header>

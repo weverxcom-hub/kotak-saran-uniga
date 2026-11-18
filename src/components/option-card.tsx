@@ -1,9 +1,12 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Check } from "lucide-react";
 import * as React from "react";
 
+/**
+ * Pilihan berbentuk baris dengan tanda radio di kiri. Deskripsi tampil utuh
+ * (tidak dipotong) supaya orang tahu persis apa yang dipilih.
+ */
 export function OptionCard({
   selected,
   label,
@@ -24,50 +27,36 @@ export function OptionCard({
   return (
     <button
       type="button"
+      role="radio"
       onClick={onClick}
-      aria-pressed={selected}
+      aria-checked={selected}
       className={cn(
-        "group relative flex w-full items-center gap-3 rounded-xl border bg-card p-4 text-left transition-all",
-        "hover:border-primary/60 hover:bg-primary/[0.04] hover:shadow-sm",
+        "group flex w-full items-start gap-3 rounded-md border bg-card text-left transition-colors",
+        "hover:border-primary/60",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-        selected
-          ? "border-primary bg-primary/[0.07] shadow-sm ring-1 ring-primary/40"
-          : "border-border",
-        size === "sm" ? "p-3" : "p-4",
+        selected ? "border-primary bg-primary/[0.05]" : "border-border",
+        size === "sm" ? "px-3 py-2.5" : "px-4 py-3",
         className,
       )}
     >
-      {icon ? (
-        <div
-          className={cn(
-            "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg transition-colors",
-            selected
-              ? "bg-primary text-primary-foreground"
-              : "bg-muted text-muted-foreground group-hover:bg-primary/15 group-hover:text-primary",
-          )}
-        >
-          {icon}
-        </div>
-      ) : null}
-      <div className="flex min-w-0 flex-1 flex-col">
-        <span className="font-medium text-foreground">{label}</span>
-        {description ? (
-          <span className="mt-0.5 text-xs text-muted-foreground line-clamp-2">
-            {description}
-          </span>
-        ) : null}
-      </div>
-      <div
-        className={cn(
-          "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-all",
-          selected
-            ? "border-primary bg-primary text-primary-foreground"
-            : "border-border bg-background",
-        )}
+      <span
         aria-hidden
+        className={cn(
+          "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
+          selected ? "border-primary" : "border-input",
+        )}
       >
-        {selected ? <Check className="h-3 w-3" strokeWidth={3} /> : null}
-      </div>
+        {selected ? <span className="h-2 w-2 rounded-full bg-primary" /> : null}
+      </span>
+      <span className="flex min-w-0 flex-1 flex-col">
+        <span className="flex items-center gap-2 font-medium text-foreground">
+          {icon ? <span className="text-muted-foreground [&>svg]:h-4 [&>svg]:w-4">{icon}</span> : null}
+          {label}
+        </span>
+        {description ? (
+          <span className="mt-0.5 text-sm text-muted-foreground">{description}</span>
+        ) : null}
+      </span>
     </button>
   );
 }

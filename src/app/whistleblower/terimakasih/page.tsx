@@ -32,20 +32,13 @@ export default function WhistleblowerThankYouPage({
     : "/lacak";
 
   return (
-    <div className="relative flex min-h-screen flex-col overflow-x-clip">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
-      >
-        <div className="absolute -left-24 top-[-10%] h-[420px] w-[420px] rounded-full bg-emerald-500/10 blur-3xl" />
-      </div>
-
+    <div className="flex min-h-screen flex-col">
       <SiteNav />
 
-      <main className="container max-w-2xl flex-1 pb-16 pt-6 sm:pt-10">
-        <div className="rounded-2xl border border-emerald-500/30 bg-emerald-50/60 p-6 dark:bg-emerald-500/10 sm:p-8">
+      <main className="container max-w-5xl flex-1 pb-16 pt-8 sm:pt-12">
+        <div className="max-w-2xl border-t-4 border-success bg-card px-6 py-8 sm:px-8">
           <div className="flex items-center gap-3">
-            <CheckCircle2 className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
+            <CheckCircle2 className="h-7 w-7 shrink-0 text-success" aria-hidden />
             <h1 className="text-2xl font-semibold text-foreground sm:text-3xl">
               {t("title")}
             </h1>
@@ -54,12 +47,12 @@ export default function WhistleblowerThankYouPage({
             {t("intro", { short: SITE_CONFIG.universityShort })}
           </p>
 
-          <div className="mt-6 rounded-xl border border-border bg-card p-4 sm:p-5">
+          <div className="mt-6 rounded-md border border-border bg-background p-4 sm:p-5">
             <p className="text-xs uppercase tracking-wider text-muted-foreground">
               {t("caseIdYou")}
             </p>
             <div className="mt-1 flex items-center justify-between gap-3">
-              <code className="text-lg font-bold tracking-wider text-foreground sm:text-xl">
+              <code className="font-mono text-xl font-semibold tracking-wider text-foreground sm:text-2xl">
                 {caseId}
               </code>
               {isValidId ? <CaseIdCopy caseId={caseId} /> : null}
@@ -78,8 +71,8 @@ export default function WhistleblowerThankYouPage({
             </p>
           </div>
 
-          <div className="mt-6 flex items-start gap-2 rounded-lg border border-border bg-background/60 p-4 text-sm text-muted-foreground">
-            <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+          <div className="mt-6 flex items-start gap-2 text-sm text-muted-foreground">
+            <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-success" aria-hidden />
             <p>{t("savedNote", { university: SITE_CONFIG.universityName })}</p>
           </div>
 

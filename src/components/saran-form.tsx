@@ -2,30 +2,13 @@
 
 import * as React from "react";
 import { useTranslations } from "next-intl";
-import {
-  ArrowLeft,
-  ArrowRight,
-  ShieldCheck,
-  EyeOff,
-  Eye,
-  GraduationCap,
-  Briefcase,
-  Users,
-  Send,
-  Loader2,
-  CheckCircle2,
-  AlertCircle,
-  Sparkles,
-  PartyPopper,
-  Home,
-} from "lucide-react";
+import { AlertCircle, CheckCircle2, EyeOff, Loader2, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { OptionCard } from "@/components/option-card";
-import { ProgressSteps, type Step } from "@/components/progress-steps";
 import {
   ROLE_OPTIONS,
   type AnonimChoice,
@@ -33,12 +16,6 @@ import {
 } from "@/lib/form-config";
 import { SITE_CONFIG } from "@/lib/site-config";
 import { cn } from "@/lib/utils";
-
-const ROLE_ICONS: Record<string, React.ElementType> = {
-  DOSEN: GraduationCap,
-  MAHASISWA: Users,
-  TENDIK: Briefcase,
-};
 
 /** Resolve translated description for a role; fallback to label if missing. */
 function roleDescr(
@@ -68,17 +45,6 @@ type UnitsLoadState =
   | { kind: "loading" }
   | { kind: "ready"; groups: UnitGroup[] }
   | { kind: "error"; message: string };
-
-function buildSteps(
-  t: ReturnType<typeof useTranslations<"saranForm">>,
-): Step[] {
-  return [
-    { id: 1, title: t("stepTentangAnda") },
-    { id: 2, title: t("stepPrivasi") },
-    { id: 3, title: t("stepMasukan") },
-    { id: 4, title: t("stepTinjau") },
-  ];
-}
 
 type FormState = {
   saudaraAdalah: string;
@@ -117,12 +83,11 @@ const PRODI_FACULTY_LEVEL_VALUE = "__faculty__";
 export function SaranForm() {
   const t = useTranslations("saranForm");
   const tCommon = useTranslations("common");
-  const STEPS = React.useMemo(() => buildSteps(t), [t]);
-  const [step, setStep] = React.useState(1);
   const [state, setState] = React.useState<FormState>(INITIAL_STATE);
+  const [honeypot, setHoneypot] = React.useState("");
   const [status, setStatus] = React.useState<SubmitStatus>({ kind: "idle" });
   const [units, setUnits] = React.useState<UnitsLoadState>({ kind: "loading" });
-  const containerRef = React.useRef<HTMLDivElement>(null);
+  const errorRef = React.useRef<HTMLDivElement>(null);
 
   // Fetch daftar fakultas + prodi dari /api/units saat mount.
   React.useEffect(() => {
@@ -137,9 +102,7 @@ export function SaranForm() {
         if (!res.ok) {
           setUnits({
             kind: "error",
-            message:
-              data?.error ??
-              t("errMuatUnit", { status: res.status }),
+            message: data?.error ?? t("errMuatUnit", { status: res.status }),
           });
           return;
         }
@@ -148,10 +111,7 @@ export function SaranForm() {
         if (!alive) return;
         setUnits({
           kind: "error",
-          message:
-            err instanceof Error
-              ? err.message
-              : tCommon("errorLoading"),
+          message: err instanceof Error ? err.message : tCommon("errorLoading"),
         });
       }
     };
@@ -172,57 +132,35 @@ export function SaranForm() {
       ? units.groups.find((g) => g.fakultas === state.fakultas)
       : undefined;
 
-  const canProceed = (s: number): { ok: boolean; message?: string } => {
-    if (s === 1) {
-      const role = state.saudaraAdalah === "Other"
-        ? state.saudaraOther.trim()
-        : state.saudaraAdalah;
-      if (!role) return { ok: false, message: t("errPilihPeran") };
-      if (!state.fakultas)
-        return { ok: false, message: t("errPilihFakultas") };
-      const group = selectedGroup;
-      const requireProdi = group ? !group.hasFacultyLevel : true;
-      if (requireProdi && !state.prodi)
-        return { ok: false, message: t("errPilihProdi") };
-    }
-    if (s === 2) {
-      if (!state.isAnonim)
-        return { ok: false, message: t("errPilihAnonim") };
-      if (state.isAnonim === "Tidak" && !state.nama.trim())
-        return { ok: false, message: t("errNamaWajib") };
-    }
-    if (s === 3) {
-      if (state.masukan.trim().length < 10)
-        return { ok: false, message: t("errMasukanMin") };
-    }
-    return { ok: true };
+  /** Validasi seluruh form sekaligus; kembalikan pesan pertama yang gagal. */
+  const firstError = (): string | null => {
+    const role =
+      state.saudaraAdalah === "Other" ? state.saudaraOther.trim() : state.saudaraAdalah;
+    if (!role) return t("errPilihPeran");
+    if (!state.fakultas) return t("errPilihFakultas");
+    const requireProdi = selectedGroup ? !selectedGroup.hasFacultyLevel : true;
+    if (requireProdi && !state.prodi) return t("errPilihProdi");
+    if (!state.isAnonim) return t("errPilihAnonim");
+    if (state.isAnonim === "Tidak" && !state.nama.trim()) return t("errNamaWajib");
+    if (state.masukan.trim().length < 10) return t("errMasukanMin");
+    return null;
   };
 
-  const goNext = () => {
-    const check = canProceed(step);
-    if (!check.ok) {
-      setStatus({ kind: "error", message: check.message ?? "" });
-      return;
-    }
-    setStatus({ kind: "idle" });
-    setStep((s) => Math.min(STEPS.length, s + 1));
+  const showError = (message: string) => {
+    setStatus({ kind: "error", message });
     requestAnimationFrame(() =>
-      containerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
+      errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }),
     );
   };
 
-  const goBack = () => {
-    setStatus({ kind: "idle" });
-    setStep((s) => Math.max(1, s - 1));
-  };
-
-  const submit = async () => {
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const err = firstError();
+    if (err) return showError(err);
     setStatus({ kind: "submitting" });
     const finalRole =
-      state.saudaraAdalah === "Other"
-        ? state.saudaraOther.trim()
-        : state.saudaraAdalah;
-    const payload: SuggestionPayload = {
+      state.saudaraAdalah === "Other" ? state.saudaraOther.trim() : state.saudaraAdalah;
+    const payload: SuggestionPayload & { website?: string } = {
       saudaraAdalah: finalRole,
       fakultas: state.fakultas,
       prodi: state.prodi || undefined,
@@ -232,6 +170,7 @@ export function SaranForm() {
       masukan: state.masukan.trim(),
       kronologi: state.kronologi.trim() || undefined,
       kontak: state.kontak.trim() || undefined,
+      website: honeypot || undefined,
     };
     try {
       const res = await fetch("/api/saran", {
@@ -240,158 +179,122 @@ export function SaranForm() {
         body: JSON.stringify(payload),
       });
       if (!res.ok) {
-        const data = (await res.json().catch(() => null)) as
-          | { error?: string }
-          | null;
-        setStatus({
-          kind: "error",
-          message: data?.error ?? t("errKirim"),
-        });
-        return;
+        const data = (await res.json().catch(() => null)) as { error?: string } | null;
+        return showError(data?.error ?? t("errKirim"));
       }
       setStatus({ kind: "success" });
-      setStep(5);
-    } catch (err) {
-      setStatus({
-        kind: "error",
-        message:
-          err instanceof Error
-            ? `${tCommon("couldNotConnect")} ${err.message}`
-            : tCommon("couldNotConnect"),
-      });
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch {
+      showError(tCommon("couldNotConnect"));
     }
   };
 
   const reset = () => {
     setState(INITIAL_STATE);
     setStatus({ kind: "idle" });
-    setStep(1);
   };
 
-  if (step === 5)
-    return (
-      <SuccessScreen
-        onReset={reset}
-        state={state}
-        t={t}
-        tCommon={tCommon}
-      />
-    );
+  if (status.kind === "success")
+    return <SuccessScreen onReset={reset} state={state} t={t} tCommon={tCommon} />;
 
   return (
-    <div ref={containerRef} className="w-full">
-      <div className="mb-6 sm:mb-8">
-        <ProgressSteps steps={STEPS} current={step} />
+    <form onSubmit={submit} noValidate className="w-full">
+      {/* Field jebakan untuk bot. Tidak terlihat dan tidak bisa difokus manusia. */}
+      <div aria-hidden className="absolute -left-[9999px] h-px w-px overflow-hidden">
+        <label>
+          Website
+          <input
+            tabIndex={-1}
+            autoComplete="off"
+            value={honeypot}
+            onChange={(e) => setHoneypot(e.target.value)}
+            name="website"
+          />
+        </label>
       </div>
 
-      <div className="rounded-2xl border border-border bg-card shadow-xl shadow-primary/5">
-        <div
-          key={step}
-          className="animate-fade-in-up px-5 py-6 sm:px-8 sm:py-8"
+      <FormSection number={1} title={t("stepTentangAnda")} description={t("tentangDescr")}>
+        <StepTentangAnda
+          state={state}
+          update={update}
+          setFakultas={setFakultas}
+          units={units}
+          selectedGroup={selectedGroup}
+          t={t}
+          tCommon={tCommon}
+        />
+      </FormSection>
+
+      <FormSection number={2} title={t("stepPrivasi")} description={t("privasiDescr")}>
+        <StepPrivasi state={state} update={update} t={t} />
+      </FormSection>
+
+      <FormSection
+        number={3}
+        title={t("stepMasukan")}
+        description={t("masukanDescr", { short: SITE_CONFIG.universityShort })}
+      >
+        <StepMasukan state={state} update={update} t={t} />
+      </FormSection>
+
+      <div className="border-t border-border pt-6">
+        <div ref={errorRef} aria-live="assertive">
+          {status.kind === "error" ? (
+            <div className="mb-4 flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/[0.06] p-3 text-sm text-destructive">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>{status.message}</span>
+            </div>
+          ) : null}
+        </div>
+        <p className="mb-5 max-w-2xl text-sm text-muted-foreground">
+          {t.rich("submitDisclaimer", {
+            university: SITE_CONFIG.universityName,
+            b: (chunks) => <span className="font-medium text-foreground">{chunks}</span>,
+          })}
+        </p>
+        <Button
+          type="submit"
+          size="lg"
+          disabled={status.kind === "submitting"}
+          className="w-full sm:w-auto"
         >
-          {step === 1 ? (
-            <StepTentangAnda
-              state={state}
-              update={update}
-              setFakultas={setFakultas}
-              units={units}
-              selectedGroup={selectedGroup}
-              t={t}
-              tCommon={tCommon}
-            />
-          ) : null}
-          {step === 2 ? (
-            <StepPrivasi state={state} update={update} t={t} />
-          ) : null}
-          {step === 3 ? (
-            <StepMasukan state={state} update={update} t={t} />
-          ) : null}
-          {step === 4 ? <StepTinjau state={state} t={t} /> : null}
-        </div>
-
-        {status.kind === "error" ? (
-          <div className="mx-5 mb-3 flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive sm:mx-8">
-            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-            <span>{status.message}</span>
-          </div>
-        ) : null}
-
-        <div className="flex flex-col-reverse gap-2 border-t border-border p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={goBack}
-            disabled={step === 1 || status.kind === "submitting"}
-            className="sm:w-auto"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            {tCommon("back")}
-          </Button>
-          {step < STEPS.length ? (
-            <Button
-              type="button"
-              variant="gradient"
-              onClick={goNext}
-              size="lg"
-              className="sm:w-auto"
-            >
-              {tCommon("next")}
-              <ArrowRight className="h-4 w-4" />
-            </Button>
+          {status.kind === "submitting" ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              {tCommon("submitting")}
+            </>
           ) : (
-            <Button
-              type="button"
-              variant="gradient"
-              size="lg"
-              onClick={submit}
-              disabled={status.kind === "submitting"}
-              className="sm:w-auto"
-            >
-              {status.kind === "submitting" ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  {tCommon("submitting")}
-                </>
-              ) : (
-                <>
-                  <Send className="h-4 w-4" />
-                  {t("kirimMasukan")}
-                </>
-              )}
-            </Button>
+            t("kirimMasukan")
           )}
-        </div>
+        </Button>
       </div>
-    </div>
+    </form>
   );
 }
 
-function SectionTitle({
+function FormSection({
+  number,
   title,
   description,
-  icon,
-  stepLabel,
+  children,
 }: {
+  number: number;
   title: string;
   description?: string;
-  icon?: React.ReactNode;
-  stepLabel: string;
+  children: React.ReactNode;
 }) {
   return (
-    <div className="mb-6">
-      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-primary">
-        {icon}
-        <span>{stepLabel}</span>
+    <fieldset className="grid gap-x-10 gap-y-5 border-t border-border py-8 md:grid-cols-[13rem_1fr]">
+      <legend className="sr-only">{title}</legend>
+      <div aria-hidden>
+        <p className="font-mono text-xs text-muted-foreground">0{number}</p>
+        <p className="mt-1 font-serif text-xl font-semibold text-foreground">{title}</p>
+        {description ? (
+          <p className="mt-2 text-sm text-muted-foreground">{description}</p>
+        ) : null}
       </div>
-      <h2 className="mt-1 text-xl font-semibold text-foreground sm:text-2xl">
-        {title}
-      </h2>
-      {description ? (
-        <p className="mt-1.5 text-sm text-muted-foreground text-pretty">
-          {description}
-        </p>
-      ) : null}
-    </div>
+      <div className="min-w-0">{children}</div>
+    </fieldset>
   );
 }
 
@@ -413,27 +316,19 @@ function StepTentangAnda({
   tCommon: ReturnType<typeof useTranslations<"common">>;
 }) {
   return (
-    <div className="space-y-7">
-      <SectionTitle
-        icon={<Sparkles className="h-3.5 w-3.5" />}
-        title={t("tentangTitle")}
-        description={t("tentangDescr")}
-        stepLabel={t("stepLabel")}
-      />
+    <div className="space-y-6">
 
       <div>
         <Label className="mb-3 block">
           {t("saudaraAdalah")} <span className="text-destructive">*</span>
         </Label>
-        <div className="grid gap-2 sm:grid-cols-3">
+        <div className="grid gap-2" role="radiogroup">
           {ROLE_OPTIONS.map((role) => {
-            const Icon = ROLE_ICONS[role] ?? Users;
             return (
               <OptionCard
                 key={role}
                 label={role}
                 description={roleDescr(t, role)}
-                icon={<Icon className="h-5 w-5" />}
                 selected={state.saudaraAdalah === role}
                 onClick={() => update("saudaraAdalah", role)}
               />
@@ -569,35 +464,27 @@ function StepPrivasi({
   t: ReturnType<typeof useTranslations<"saranForm">>;
 }) {
   return (
-    <div className="space-y-7">
-      <SectionTitle
-        icon={<ShieldCheck className="h-3.5 w-3.5" />}
-        title={t("privasiTitle")}
-        description={t("privasiDescr")}
-        stepLabel={t("stepLabel")}
-      />
+    <div className="space-y-6">
 
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-2" role="radiogroup">
         <OptionCard
           label={t("withIdentitas")}
           description={t("withIdentitasDescr", {
             short: SITE_CONFIG.universityShort,
           })}
-          icon={<Eye className="h-5 w-5" />}
           selected={state.isAnonim === "Tidak"}
           onClick={() => update("isAnonim", "Tidak")}
         />
         <OptionCard
           label={t("anonim")}
           description={t("anonimDescr")}
-          icon={<EyeOff className="h-5 w-5" />}
           selected={state.isAnonim === "Ya"}
           onClick={() => update("isAnonim", "Ya")}
         />
       </div>
 
       {state.isAnonim === "Tidak" ? (
-        <div className="animate-fade-in space-y-4 rounded-xl border border-primary/20 bg-primary/[0.04] p-4 sm:p-5">
+        <div className="space-y-4 border-l-2 border-primary/60 pl-4">
           <div className="flex items-center gap-2 text-sm font-medium text-primary">
             <ShieldCheck className="h-4 w-4" />
             {t("identitasHeader")}
@@ -637,7 +524,7 @@ function StepPrivasi({
       ) : null}
 
       {state.isAnonim === "Ya" ? (
-        <div className="flex items-start gap-3 rounded-xl border border-accent/30 bg-accent/[0.06] p-4 text-sm text-foreground sm:p-5">
+        <div className="flex items-start gap-3 border-l-2 border-accent pl-4 text-sm text-foreground">
           <EyeOff className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
           <div className="space-y-1">
             <p className="font-medium">{t("anonActiveTitle")}</p>
@@ -661,15 +548,7 @@ function StepMasukan({
   const masukanLen = state.masukan.length;
   const minOk = masukanLen >= 10;
   return (
-    <div className="space-y-7">
-      <SectionTitle
-        icon={<Send className="h-3.5 w-3.5" />}
-        title={t("masukanTitle")}
-        description={t("masukanDescr", {
-          short: SITE_CONFIG.universityShort,
-        })}
-        stepLabel={t("stepLabel")}
-      />
+    <div className="space-y-6">
 
       <div>
         <div className="mb-1.5 flex items-center justify-between">
@@ -739,81 +618,6 @@ function StepMasukan({
   );
 }
 
-function StepTinjau({
-  state,
-  t,
-}: {
-  state: FormState;
-  t: ReturnType<typeof useTranslations<"saranForm">>;
-}) {
-  const role =
-    state.saudaraAdalah === "Other" ? state.saudaraOther : state.saudaraAdalah;
-  const unitLabel = state.prodi
-    ? `${state.fakultas} \u2014 ${state.prodi}`
-    : state.fakultas;
-  const items: Array<{ label: string; value?: string }> = [
-    { label: t("label_saudaraAdalah"), value: role },
-    { label: t("label_unit"), value: unitLabel },
-    {
-      label: t("label_mode"),
-      value:
-        state.isAnonim === "Ya"
-          ? t("anonim")
-          : t("identitasHeader"),
-    },
-  ];
-  if (state.isAnonim === "Tidak") {
-    items.push({ label: t("label_nama"), value: state.nama });
-    if (state.nim) items.push({ label: t("label_nim"), value: state.nim });
-  }
-  items.push({ label: t("label_masukan"), value: state.masukan });
-  if (state.kronologi)
-    items.push({ label: t("label_kronologi"), value: state.kronologi });
-  if (state.kontak)
-    items.push({ label: t("label_kontak"), value: state.kontak });
-
-  return (
-    <div className="space-y-6">
-      <SectionTitle
-        icon={<CheckCircle2 className="h-3.5 w-3.5" />}
-        title={t("tinjauTitle")}
-        description={t("tinjauDescr", {
-          short: SITE_CONFIG.universityShort,
-        })}
-        stepLabel={t("stepLabel")}
-      />
-
-      <ul className="divide-y divide-border rounded-xl border border-border bg-background">
-        {items.map((it) => (
-          <li
-            key={it.label}
-            className="grid gap-1 px-4 py-3 sm:grid-cols-[180px_1fr] sm:gap-4 sm:px-5"
-          >
-            <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              {it.label}
-            </span>
-            <span className="whitespace-pre-wrap text-sm text-foreground">
-              {it.value || "\u2014"}
-            </span>
-          </li>
-        ))}
-      </ul>
-
-      <div className="flex items-start gap-3 rounded-xl border border-success/30 bg-success/[0.07] p-4 text-sm text-foreground">
-        <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-success" />
-        <p className="text-muted-foreground">
-          {t.rich("submitDisclaimer", {
-            university: SITE_CONFIG.universityName,
-            b: (chunks) => (
-              <span className="font-medium text-foreground">{chunks}</span>
-            ),
-          })}
-        </p>
-      </div>
-    </div>
-  );
-}
-
 function SuccessScreen({
   onReset,
   state,
@@ -826,38 +630,30 @@ function SuccessScreen({
   tCommon: ReturnType<typeof useTranslations<"common">>;
 }) {
   const name =
-    state.isAnonim === "Ya"
-      ? t("successAnonymous")
-      : state.nama || t("successYou");
+    state.isAnonim === "Ya" ? t("successAnonymous") : state.nama || t("successYou");
   return (
-    <div className="rounded-2xl border border-border bg-card p-8 text-center shadow-xl shadow-success/10 sm:p-12">
-      <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-success/15 text-success">
-        <PartyPopper className="h-8 w-8" />
-      </div>
-      <h2 className="text-2xl font-semibold text-foreground sm:text-3xl">
+    <div className="border-t-4 border-success bg-card px-6 py-8 sm:px-8" role="status">
+      <CheckCircle2 className="h-7 w-7 text-success" aria-hidden />
+      <h2 className="mt-4 text-2xl font-semibold text-foreground sm:text-3xl">
         {t("successTitle")}
       </h2>
-      <p className="mx-auto mt-3 max-w-lg text-pretty text-muted-foreground">
+      <p className="mt-3 max-w-xl text-pretty text-muted-foreground">
         {t.rich("successDescr", {
           name,
           university: SITE_CONFIG.universityName,
-          b: (chunks) => (
-            <span className="font-medium text-foreground">{chunks}</span>
-          ),
+          b: (chunks) => <span className="font-medium text-foreground">{chunks}</span>,
         })}
       </p>
-
-      <div className="mt-8 flex flex-col items-center justify-center gap-2 sm:flex-row sm:gap-3">
-        <Button onClick={onReset} variant="gradient" size="lg">
-          <Send className="h-4 w-4" />
+      <div className="mt-7 flex flex-col gap-2 sm:flex-row sm:gap-3">
+        <Button onClick={onReset} size="lg">
           {t("successKirimLain")}
         </Button>
-        <Button asChild variant="outline" size="lg">
-          <a href="/">
-            <Home className="h-4 w-4" />
-            {tCommon("backToHome")}
-          </a>
-        </Button>
+        <a
+          href="/"
+          className="inline-flex h-11 items-center justify-center rounded-md border border-input px-5 text-sm font-semibold text-foreground hover:bg-muted"
+        >
+          {tCommon("backToHome")}
+        </a>
       </div>
     </div>
   );

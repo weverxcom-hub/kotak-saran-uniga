@@ -33,13 +33,6 @@ export default function ReportUnitsPage() {
   const t = useTranslations("adminCommon");
   return (
     <div className="relative min-h-screen overflow-x-clip">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
-      >
-        <div className="absolute -left-24 top-[-10%] h-[420px] w-[420px] rounded-full bg-primary/10 blur-3xl" />
-        <div className="absolute -right-32 top-[10%] h-[420px] w-[420px] rounded-full bg-accent/10 blur-3xl" />
-      </div>
 
       <header className="container flex items-center justify-between py-5 sm:py-6">
         <div className="flex items-center gap-3">
@@ -83,7 +76,7 @@ export default function ReportUnitsPage() {
           </Link>
           <span
             aria-current="page"
-            className="inline-flex items-center gap-2 whitespace-nowrap rounded-lg bg-primary px-3 py-2 font-medium text-primary-foreground shadow-sm"
+            className="inline-flex items-center gap-2 whitespace-nowrap rounded-lg bg-primary px-3 py-2 font-medium text-primary-foreground"
           >
             <Building2 className="h-4 w-4" />
             {t("unitProdi")}

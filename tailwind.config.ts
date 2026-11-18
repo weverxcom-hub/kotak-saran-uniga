@@ -17,6 +17,21 @@ const config: Config = {
     },
     extend: {
       colors: {
+        // Semua `rose-*` lama dipetakan ke merah bata/marun yang lebih tenang,
+        // dipakai untuk saluran whistleblower.
+        rose: {
+          50: "#fbf4f3",
+          100: "#f5e4e1",
+          200: "#e9c6c0",
+          300: "#d79d93",
+          400: "#bf6f63",
+          500: "#a14b3f",
+          600: "#873a30",
+          700: "#6e2f27",
+          800: "#552620",
+          900: "#3f1d19",
+          950: "#24100d",
+        },
         background: "hsl(var(--background) / <alpha-value>)",
         foreground: "hsl(var(--foreground) / <alpha-value>)",
         muted: {
@@ -47,39 +62,17 @@ const config: Config = {
           foreground: "hsl(var(--success-foreground) / <alpha-value>)",
         },
       },
+      // xl/2xl sengaja dikecilkan supaya kartu-kartu lama ikut bersudut tegas.
       borderRadius: {
+        "2xl": "calc(var(--radius) + 2px)",
+        xl: "calc(var(--radius) + 2px)",
         lg: "var(--radius)",
-        md: "calc(var(--radius) - 4px)",
-        sm: "calc(var(--radius) - 8px)",
+        md: "calc(var(--radius) - 2px)",
+        sm: "calc(var(--radius) - 4px)",
       },
-      backgroundImage: {
-        "grid-pattern":
-          "radial-gradient(circle at 1px 1px, hsl(var(--border) / 0.5) 1px, transparent 0)",
-      },
-      animation: {
-        "fade-in": "fade-in 0.5s ease-out forwards",
-        "fade-in-up": "fade-in-up 0.5s ease-out forwards",
-        "shimmer": "shimmer 2s linear infinite",
-        "blob": "blob 14s ease-in-out infinite",
-      },
-      keyframes: {
-        "fade-in": {
-          "0%": { opacity: "0" },
-          "100%": { opacity: "1" },
-        },
-        "fade-in-up": {
-          "0%": { opacity: "0", transform: "translateY(8px)" },
-          "100%": { opacity: "1", transform: "translateY(0)" },
-        },
-        "shimmer": {
-          "0%": { backgroundPosition: "-1000px 0" },
-          "100%": { backgroundPosition: "1000px 0" },
-        },
-        "blob": {
-          "0%, 100%": { transform: "translate(0,0) scale(1)" },
-          "33%": { transform: "translate(30px,-50px) scale(1.1)" },
-          "66%": { transform: "translate(-20px,20px) scale(0.9)" },
-        },
+      fontFamily: {
+        sans: ["var(--font-sans)", "system-ui", "sans-serif"],
+        serif: ["var(--font-serif)", "Georgia", "serif"],
       },
     },
   },
