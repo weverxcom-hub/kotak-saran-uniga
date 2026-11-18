@@ -181,7 +181,7 @@ export function LacakClient({ initialCaseId }: { initialCaseId: string }) {
             id="lacak-case-id"
             value={caseId}
             onChange={(e) => setCaseId(e.target.value)}
-            placeholder="WB-20260509-A4F1"
+            placeholder="WB-20260509-7KQ4M2XP"
             autoComplete="off"
             inputMode="text"
             spellCheck={false}

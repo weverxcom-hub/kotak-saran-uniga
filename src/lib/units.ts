@@ -1,5 +1,6 @@
 import { google } from "googleapis";
 import { SheetsConfigError } from "@/lib/sheets";
+import { safeRow } from "@/lib/safe-cell";
 
 /**
  * Manajemen daftar Fakultas / Prodi (unit kerja) dinamis lewat Google Sheets.
@@ -336,7 +337,7 @@ export async function appendUnit(input: {
     range: `${UNITS_SHEET_NAME}!A:E`,
     valueInputOption: "USER_ENTERED",
     insertDataOption: "INSERT_ROWS",
-    requestBody: { values: [row] },
+    requestBody: { values: [safeRow(row)] },
   });
   invalidateUnitsCache();
   // Coba parse rowIndex dari response (updatedRange "Units!A12:E12")
@@ -368,7 +369,7 @@ export async function updateUnit(rowIndex: number, input: {
     spreadsheetId: sheetId,
     range: `${UNITS_SHEET_NAME}!A${rowIndex}:E${rowIndex}`,
     valueInputOption: "USER_ENTERED",
-    requestBody: { values: [row] },
+    requestBody: { values: [safeRow(row)] },
   });
   invalidateUnitsCache();
 }
@@ -437,7 +438,7 @@ export async function seedDefaultUnits(): Promise<{ inserted: number }> {
     range: `${UNITS_SHEET_NAME}!A:E`,
     valueInputOption: "USER_ENTERED",
     insertDataOption: "INSERT_ROWS",
-    requestBody: { values: rows },
+    requestBody: { values: rows.map(safeRow) },
   });
   invalidateUnitsCache();
   return { inserted: rows.length };

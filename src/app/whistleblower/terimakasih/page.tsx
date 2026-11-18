@@ -26,7 +26,7 @@ export default function WhistleblowerThankYouPage({
   const t = useTranslations("terimakasih");
   const tCommon = useTranslations("common");
   const caseId = searchParams.case ?? t("unavailable");
-  const isValidId = /^WB-\d{8}-[A-Z0-9]{4}$/.test(caseId);
+  const isValidId = /^WB-\d{8}-[A-Z0-9]{4,8}$/.test(caseId);
   const lacakHref = isValidId
     ? `/lacak?caseId=${encodeURIComponent(caseId)}`
     : "/lacak";

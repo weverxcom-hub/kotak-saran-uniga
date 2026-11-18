@@ -771,7 +771,7 @@ function StatusEditor({
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status, catatanPublik: catatan }),
+          body: JSON.stringify({ status, catatanPublik: catatan, caseId: row.caseId }),
         },
       );
       const data = (await res.json().catch(() => null)) as

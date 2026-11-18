@@ -1,9 +1,16 @@
 import { NextResponse } from "next/server";
 import { checkPassword, createSessionToken, SESSION_COOKIE_NAME } from "@/lib/auth";
+import { rateLimited } from "@/lib/api-response";
+import { RULES } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
+  // Maks 5 percobaan per 15 menit per IP (dihitung semua percobaan,
+  // bukan hanya yang gagal) supaya password tidak bisa ditebak beruntun.
+  const limited = rateLimited(req, RULES.login);
+  if (limited) return limited;
+
   let body: { password?: unknown } | null = null;
   try {
     body = (await req.json()) as { password?: unknown };
@@ -18,12 +25,14 @@ export async function POST(req: Request) {
     return NextResponse.json(
       {
         error:
-          "Password report belum dikonfigurasi (REPORT_PASSWORD belum di-set di environment).",
+          "Login admin belum dikonfigurasi. Hubungi pengelola sistem.",
       },
       { status: 500 },
     );
   }
   if (!checkPassword(password)) {
+    // Jeda kecil memperlambat tebakan otomatis.
+    await new Promise((r) => setTimeout(r, 800));
     return NextResponse.json(
       { error: "Password salah." },
       { status: 401 },

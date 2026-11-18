@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
-import {
-  fetchWhistleblowerPublicStatus,
-  SheetsConfigError,
-} from "@/lib/sheets";
+import { fetchWhistleblowerPublicStatus } from "@/lib/sheets";
+import { rateLimited, serverError } from "@/lib/api-response";
+import { RULES } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,13 +13,16 @@ export const dynamic = "force-dynamic";
  * identitas, dan kontak TIDAK pernah dikirim ke client supaya kalau Case
  * ID bocor, isi laporannya tetap rahasia.
  *
- * Format Case ID standar: WB-YYYYMMDD-XXXX (mis. WB-20260509-A4F1).
+ * Format Case ID standar: WB-YYYYMMDD-XXXXXXXX (mis. WB-20260509-7KQ4M2XP).
  * Toleransi spasi dan kapitalisasi.
  */
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: { caseId: string } },
 ) {
+  const limited = rateLimited(req, RULES.lacak);
+  if (limited) return limited;
+
   const raw = decodeURIComponent(params.caseId ?? "").trim();
   if (!raw) {
     return NextResponse.json(
@@ -33,7 +35,7 @@ export async function GET(
     return NextResponse.json(
       {
         error:
-          "Format Case ID tidak valid. Contoh format: WB-20260509-A4F1.",
+          "Format Case ID tidak valid. Contoh format: WB-20260509-7KQ4M2XP.",
       },
       { status: 400 },
     );
@@ -57,23 +59,6 @@ export async function GET(
       },
     });
   } catch (err) {
-    if (err instanceof SheetsConfigError) {
-      return NextResponse.json(
-        {
-          error:
-            err.message +
-            " Hubungi pengelola sistem untuk konfigurasi spreadsheet.",
-        },
-        { status: 500 },
-      );
-    }
-    const message =
-      err instanceof Error
-        ? err.message
-        : "Gagal memuat status laporan.";
-    return NextResponse.json(
-      { error: `Gagal memuat status: ${message}` },
-      { status: 502 },
-    );
+    return serverError(err, "lacak", "Status laporan belum bisa dimuat. Silakan coba lagi beberapa saat lagi.");
   }
 }

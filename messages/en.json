@@ -242,11 +242,11 @@
     "title": "Track your report status",
     "intro": "Enter the <b>Case ID</b> you received after submitting your report. You will see the latest status & public notes from the admin. Report details remain confidential.",
     "caseIdLabel": "Case ID",
-    "format": "Format: <code>WB-YYYYMMDD-XXXX</code>",
+    "format": "Format: <code>WB-YYYYMMDD-XXXXXXXX</code>",
     "btn": "Track",
     "btnLoading": "Checking…",
     "errEmpty": "Please enter a Case ID first.",
-    "errFormat": "Invalid Case ID format. Example: WB-20260509-A4F1.",
+    "errFormat": "Invalid Case ID format. Example: WB-20260509-7KQ4M2XP.",
     "errLoadStatus": "Failed to load status (HTTP {status}).",
     "errCantConnect": "Could not connect: {message}",
     "errNotFound": "Case ID not found.",
@@ -259,7 +259,7 @@
     "catatanEmpty": "No public note yet. Please check back later.",
     "privacyNote": "For security, the report content, reporter identity, and contact info are <b>not</b> shown on this page even when the Case ID matches.",
     "lupaTitle": "Forgot your Case ID?",
-    "lupaDescr": "The Case ID is shown only once after submitting your report (format: <code>WB-YYYYMMDD-XXXX</code>). If you lost the code, contact the admin at <emailLink>admin email</emailLink> explaining roughly when the report was submitted.",
+    "lupaDescr": "The Case ID is shown only once after submitting your report (format: <code>WB-YYYYMMDD-XXXXXXXX</code>). If you lost the code, contact the admin at <emailLink>admin email</emailLink> explaining roughly when the report was submitted.",
     "status": {
       "Diterima": {
         "label": "Received",

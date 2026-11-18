@@ -13,11 +13,14 @@ const SESSION_COOKIE = "kotak-saran-session";
 const DEFAULT_TTL_SECONDS = 60 * 60 * 8; // 8 jam
 
 function getSecret(): string {
-  const secret =
-    process.env.REPORT_SESSION_SECRET ||
-    process.env.REPORT_PASSWORD ||
-    "kotak-saran-dev-secret-change-me";
-  return secret;
+  const secret = process.env.REPORT_SESSION_SECRET || process.env.REPORT_PASSWORD;
+  if (secret) return secret;
+  // Rahasia bawaan hanya boleh dipakai saat development lokal. Di produksi
+  // lebih baik login gagal daripada cookie bisa dipalsukan.
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("REPORT_SESSION_SECRET / REPORT_PASSWORD belum di-set.");
+  }
+  return "kotak-saran-dev-secret-change-me";
 }
 
 function sign(message: string): string {
@@ -35,7 +38,12 @@ export function verifySessionToken(token: string | undefined): boolean {
   if (!token) return false;
   const [message, signature] = token.split(".");
   if (!message || !signature) return false;
-  const expectedSignature = sign(message);
+  let expectedSignature: string;
+  try {
+    expectedSignature = sign(message);
+  } catch {
+    return false;
+  }
   const a = Buffer.from(signature);
   const b = Buffer.from(expectedSignature);
   if (a.length !== b.length) return false;
