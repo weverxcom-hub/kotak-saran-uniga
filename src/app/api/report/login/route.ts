@@ -1,5 +1,11 @@
 import { NextResponse } from "next/server";
-import { checkPassword, createSessionToken, SESSION_COOKIE_NAME } from "@/lib/auth";
+import {
+  checkPassword,
+  createSessionToken,
+  SESSION_COOKIE_NAME,
+  SESSION_COOKIE_OPTIONS,
+} from "@/lib/auth";
+import { passwordLoginEnabled } from "@/lib/admin-access";
 import { rateLimited } from "@/lib/api-response";
 import { RULES } from "@/lib/rate-limit";
 
@@ -21,13 +27,11 @@ export async function POST(req: Request) {
     );
   }
   const password = typeof body?.password === "string" ? body.password : "";
-  if (!process.env.REPORT_PASSWORD) {
+  if (!passwordLoginEnabled()) {
+    // Login password mati kalau login Google aktif, atau belum diset sama sekali.
     return NextResponse.json(
-      {
-        error:
-          "Login admin belum dikonfigurasi. Hubungi pengelola sistem.",
-      },
-      { status: 500 },
+      { error: "Login password tidak aktif. Gunakan tombol masuk dengan Google." },
+      { status: 403 },
     );
   }
   if (!checkPassword(password)) {
@@ -38,15 +42,8 @@ export async function POST(req: Request) {
       { status: 401 },
     );
   }
-  const token = createSessionToken();
   const res = NextResponse.json({ ok: true });
-  res.cookies.set(SESSION_COOKIE_NAME, token, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: 60 * 60 * 8,
-  });
+  res.cookies.set(SESSION_COOKIE_NAME, createSessionToken(null), SESSION_COOKIE_OPTIONS);
   return res;
 }
 
