@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import {
+  CaseNotFoundError,
   isWhistleblowerStatus,
-  SheetsConfigError,
   updateWhistleblowerStatus,
 } from "@/lib/sheets";
+import { serverError } from "@/lib/api-response";
 import { SESSION_COOKIE_NAME, verifySessionToken } from "@/lib/auth";
 
 export const runtime = "nodejs";
@@ -57,10 +58,12 @@ export async function PATCH(
     );
   }
 
-  const { status: rawStatus, catatanPublik: rawCatatan } = body as Record<
-    string,
-    unknown
-  >;
+  const {
+    status: rawStatus,
+    catatanPublik: rawCatatan,
+    caseId: rawCaseId,
+  } = body as Record<string, unknown>;
+  const caseId = typeof rawCaseId === "string" ? rawCaseId.trim() : "";
   const status = typeof rawStatus === "string" ? rawStatus.trim() : "";
   if (!isWhistleblowerStatus(status)) {
     return NextResponse.json(
@@ -81,33 +84,25 @@ export async function PATCH(
   }
 
   try {
-    const { statusUpdatedAt } = await updateWhistleblowerStatus(rowIndex, {
+    const result = await updateWhistleblowerStatus(rowIndex, {
       status,
       catatanPublik,
+      caseId: caseId || undefined,
     });
     return NextResponse.json({
       ok: true,
-      rowIndex,
+      rowIndex: result.rowIndex,
+      statusUpdatedAt: result.statusUpdatedAt,
       status,
       catatanPublik,
-      statusUpdatedAt,
     });
   } catch (err) {
-    if (err instanceof SheetsConfigError) {
+    if (err instanceof CaseNotFoundError) {
       return NextResponse.json(
-        {
-          error:
-            err.message +
-            " Hubungi pengelola sistem untuk konfigurasi spreadsheet.",
-        },
-        { status: 500 },
+        { error: "Laporan tidak ditemukan lagi di spreadsheet. Muat ulang dashboard." },
+        { status: 409 },
       );
     }
-    const message =
-      err instanceof Error ? err.message : "Gagal menyimpan status.";
-    return NextResponse.json(
-      { error: `Gagal menyimpan status: ${message}` },
-      { status: 502 },
-    );
+    return serverError(err, "admin/whistleblower", "Status belum tersimpan. Coba lagi.");
   }
 }

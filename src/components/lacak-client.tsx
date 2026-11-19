@@ -162,7 +162,7 @@ export function LacakClient({ initialCaseId }: { initialCaseId: string }) {
     <div className="space-y-5">
       <form
         onSubmit={onSubmit}
-        className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5"
+        className="rounded-2xl border border-border bg-card p-4 sm:p-5"
       >
         <Label htmlFor="lacak-case-id" className="text-sm font-medium">
           {t("caseIdLabel")}
@@ -181,7 +181,7 @@ export function LacakClient({ initialCaseId }: { initialCaseId: string }) {
             id="lacak-case-id"
             value={caseId}
             onChange={(e) => setCaseId(e.target.value)}
-            placeholder="WB-20260509-A4F1"
+            placeholder="WB-20260509-7KQ4M2XP"
             autoComplete="off"
             inputMode="text"
             spellCheck={false}
@@ -251,7 +251,7 @@ function ResultCard({
   const label = tStatus(`${data.status}.label`);
   const description = tStatus(`${data.status}.description`);
   return (
-    <article className="rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-6">
+    <article className="rounded-2xl border border-border bg-card p-5 sm:p-6">
       <div className="flex flex-wrap items-start gap-3">
         <div
           className={cn(

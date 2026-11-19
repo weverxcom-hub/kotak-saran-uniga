@@ -63,17 +63,16 @@ export async function GET() {
       },
     );
   } catch (err) {
-    if (err instanceof SheetsConfigError) {
-      return NextResponse.json(
-        { error: err.message, groups: [], units: [] },
-        { status: 500 },
-      );
-    }
-    const message =
-      err instanceof Error ? err.message : "Gagal memuat daftar unit.";
+    // Detail teknis hanya di log server.
+    const kind = err instanceof SheetsConfigError ? "config" : "upstream";
+    console.error(`[units] ${kind}: ${err instanceof Error ? err.message : String(err)}`);
     return NextResponse.json(
-      { error: message, groups: [], units: [] },
-      { status: 502 },
+      {
+        error: "Daftar fakultas belum bisa dimuat. Muat ulang halaman atau coba lagi beberapa saat lagi.",
+        groups: [],
+        units: [],
+      },
+      { status: kind === "config" ? 500 : 502 },
     );
   }
 }

@@ -354,7 +354,7 @@ export function WhistleblowerDashboard() {
       ) : null}
 
       {/* Filters */}
-      <section className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
+      <section className="rounded-2xl border border-border bg-card p-4 sm:p-5">
         <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-foreground">
           <Filter className="h-4 w-4 text-rose-600" />
           {t("filterTitle")}
@@ -573,7 +573,7 @@ export function WhistleblowerDashboard() {
               return (
                 <div
                   key={id}
-                  className="overflow-hidden rounded-xl border border-border bg-card shadow-sm"
+                  className="overflow-hidden rounded-xl border border-border bg-card"
                 >
                   <button
                     type="button"
@@ -771,7 +771,7 @@ function StatusEditor({
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status, catatanPublik: catatan }),
+          body: JSON.stringify({ status, catatanPublik: catatan, caseId: row.caseId }),
         },
       );
       const data = (await res.json().catch(() => null)) as
@@ -810,7 +810,7 @@ function StatusEditor({
   return (
     <section
       aria-label={t("statusEditTitle")}
-      className="rounded-xl border border-border bg-background p-4 shadow-sm"
+      className="rounded-xl border border-border bg-background p-4"
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">

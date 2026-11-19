@@ -9,7 +9,6 @@ import {
   Loader2,
   AlertCircle,
   RefreshCw,
-  Sparkles,
   Check,
   X,
   Pencil,
@@ -228,7 +227,7 @@ export function UnitsManager() {
   return (
     <div className="space-y-6">
       {/* Header / actions */}
-      <section className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
+      <section className="rounded-2xl border border-border bg-card p-4 sm:p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2 className="text-base font-semibold text-foreground">
@@ -267,7 +266,7 @@ export function UnitsManager() {
                 </>
               ) : (
                 <>
-                  <Sparkles className="h-4 w-4" /> {t("seedDefault")}
+                  {t("seedDefault")}
                 </>
               )}
             </Button>
@@ -276,7 +275,7 @@ export function UnitsManager() {
       </section>
 
       {/* Add form */}
-      <section className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
+      <section className="rounded-2xl border border-border bg-card p-4 sm:p-5">
         <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
           <Plus className="h-4 w-4 text-primary" /> {t("addNew")}
         </h3>
@@ -358,7 +357,7 @@ export function UnitsManager() {
       ) : null}
 
       {/* List */}
-      <section className="rounded-2xl border border-border bg-card shadow-sm">
+      <section className="rounded-2xl border border-border bg-card">
         <div className="flex items-center justify-between border-b border-border px-4 py-3 sm:px-5">
           <h3 className="text-sm font-semibold text-foreground">
             {t("tersimpan")}

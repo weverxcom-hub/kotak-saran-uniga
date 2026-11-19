@@ -18,7 +18,7 @@ export function BrandMark({
   return (
     <div
       className={cn(
-        "relative flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-white shadow-sm ring-2 ring-accent/70",
+        "relative flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-white",
         className,
       )}
       style={{ width: size, height: size }}

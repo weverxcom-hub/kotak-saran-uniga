@@ -4,7 +4,6 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
-  AlertTriangle,
   ShieldAlert,
   Loader2,
   AlertCircle,
@@ -84,6 +83,7 @@ export function WhistleblowerForm() {
   const tStatus = useTranslations("saranForm");
   const tCat = useTranslations("whistleblowerForm.categories");
   const [state, setState] = React.useState<FormState>(INITIAL_STATE);
+  const [honeypot, setHoneypot] = React.useState("");
   const [status, setStatus] = React.useState<SubmitStatus>({ kind: "idle" });
   const [units, setUnits] = React.useState<UnitsLoadState>({ kind: "loading" });
 
@@ -187,6 +187,7 @@ export function WhistleblowerForm() {
             : undefined,
         detail: state.detail.trim(),
         kronologi: state.kronologi.trim() || undefined,
+        website: honeypot || undefined,
       };
       const res = await fetch("/api/whistleblower", {
         method: "POST",
@@ -212,22 +213,32 @@ export function WhistleblowerForm() {
       router.push(
         `/whistleblower/terimakasih?case=${encodeURIComponent(data.caseId)}`,
       );
-    } catch (err) {
+    } catch {
       setStatus({
         kind: "error",
-        message:
-          err instanceof Error
-            ? err.message
-            : tCommon("couldNotConnect"),
+        message: tCommon("couldNotConnect"),
       });
     }
   };
 
   return (
-    <form onSubmit={onSubmit} className="space-y-6">
+    <form onSubmit={onSubmit} noValidate className="space-y-8">
+      {/* Field jebakan untuk bot. Tidak terlihat dan tidak bisa difokus manusia. */}
+      <div aria-hidden className="absolute -left-[9999px] h-px w-px overflow-hidden">
+        <label>
+          Website
+          <input
+            tabIndex={-1}
+            autoComplete="off"
+            name="website"
+            value={honeypot}
+            onChange={(e) => setHoneypot(e.target.value)}
+          />
+        </label>
+      </div>
       {/* Disclaimer / warning banner */}
-      <div className="flex gap-3 rounded-xl border border-rose-300/60 bg-rose-50/80 p-4 text-sm text-rose-900 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-100">
-        <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-rose-600 dark:text-rose-300" />
+      <div className="flex gap-3 border-l-2 border-rose-600 py-1 pl-4 text-sm text-foreground dark:border-rose-400">
+        <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-rose-700 dark:text-rose-300" aria-hidden />
         <div className="space-y-1">
           <p className="font-semibold">{t("disclaimerTitle")}</p>
           <p>{t("disclaimerBody")}</p>
@@ -235,8 +246,8 @@ export function WhistleblowerForm() {
       </div>
 
       {/* Section 1: Pelapor */}
-      <fieldset className="space-y-4 rounded-xl border border-border bg-card/60 p-5">
-        <legend className="px-2 text-sm font-semibold text-foreground">
+      <fieldset className="space-y-4 border-t border-border pt-6">
+        <legend className="mb-4 font-serif text-xl font-semibold text-foreground">
           {t("section1")}
         </legend>
 
@@ -338,8 +349,8 @@ export function WhistleblowerForm() {
       </fieldset>
 
       {/* Section 2: Privasi */}
-      <fieldset className="space-y-4 rounded-xl border border-border bg-card/60 p-5">
-        <legend className="px-2 text-sm font-semibold text-foreground">
+      <fieldset className="space-y-4 border-t border-border pt-6">
+        <legend className="mb-4 font-serif text-xl font-semibold text-foreground">
           {t("section2")}
         </legend>
 
@@ -420,8 +431,8 @@ export function WhistleblowerForm() {
       </fieldset>
 
       {/* Section 3: Laporan */}
-      <fieldset className="space-y-4 rounded-xl border border-border bg-card/60 p-5">
-        <legend className="px-2 text-sm font-semibold text-foreground">
+      <fieldset className="space-y-4 border-t border-border pt-6">
+        <legend className="mb-4 font-serif text-xl font-semibold text-foreground">
           {t("section3")}
         </legend>
 
@@ -501,8 +512,8 @@ export function WhistleblowerForm() {
       </fieldset>
 
       {/* Section 4: Pernyataan */}
-      <fieldset className="space-y-3 rounded-xl border border-border bg-card/60 p-5">
-        <legend className="px-2 text-sm font-semibold text-foreground">
+      <fieldset className="space-y-3 border-t border-border pt-6">
+        <legend className="mb-4 font-serif text-xl font-semibold text-foreground">
           {t("section4")}
         </legend>
 
@@ -548,8 +559,7 @@ export function WhistleblowerForm() {
         )}
       </Button>
 
-      <p className="flex items-center gap-2 text-xs text-muted-foreground">
-        <AlertTriangle className="h-3.5 w-3.5 text-rose-500" />
+      <p className="text-sm text-muted-foreground">
         {t.rich("afterCaseId", {
           b: (chunks) => <strong>{chunks}</strong>,
         })}

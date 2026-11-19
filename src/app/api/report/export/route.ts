@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { safeCell } from "@/lib/safe-cell";
 import { cookies } from "next/headers";
 import {
   applyFilters,
@@ -53,8 +54,10 @@ const COLUMNS: Array<[string, (r: SubmissionRow) => string]> = [
 
 function csvEscape(value: string): string {
   if (value == null) return "";
-  const needsQuote = /[",\n\r]/.test(value);
-  const escaped = value.replace(/"/g, '""');
+  // safeCell: cegah rumus berjalan saat CSV dibuka di Excel/Sheets.
+  const safe = safeCell(value);
+  const needsQuote = /[",\n\r]/.test(safe);
+  const escaped = safe.replace(/"/g, '""');
   return needsQuote ? `"${escaped}"` : escaped;
 }
 

@@ -22,27 +22,15 @@ export default function LacakPage({
   const initialCaseId = searchParams?.caseId?.trim() ?? "";
   const t = useTranslations("lacak");
   return (
-    <div className="relative flex min-h-screen flex-col overflow-x-clip">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
-      >
-        <div className="absolute -left-24 top-[-10%] h-[420px] w-[420px] rounded-full bg-primary/15 blur-3xl animate-blob" />
-        <div className="absolute -right-32 top-[10%] h-[420px] w-[420px] rounded-full bg-accent/15 blur-3xl animate-blob [animation-delay:-7s]" />
-      </div>
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 grid-bg opacity-30"
-      />
-
+    <div className="flex min-h-screen flex-col">
       <SiteNav />
 
-      <main className="container flex-1 pb-16 pt-10 sm:pb-20 sm:pt-14">
-        <div className="mx-auto max-w-2xl">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+      <main className="container max-w-5xl flex-1 pb-16 pt-8 sm:pt-12">
+        <div className="max-w-2xl">
+          <p className="eyebrow">
             {t("section")}
           </p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+          <h1 className="mt-1 text-2xl font-semibold text-foreground sm:text-3xl">
             {t("title")}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground sm:text-base">
@@ -55,7 +43,7 @@ export default function LacakPage({
             <LacakClient initialCaseId={initialCaseId} />
           </div>
 
-          <div className="mt-8 rounded-xl border border-border bg-card/60 p-4 text-sm text-muted-foreground">
+          <div className="mt-8 border-t border-border pt-5 text-sm text-muted-foreground">
             <p className="font-medium text-foreground">{t("lupaTitle")}</p>
             <p className="mt-1">
               {t.rich("lupaDescr", {

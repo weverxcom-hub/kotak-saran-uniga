@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { Languages } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
@@ -45,11 +44,10 @@ export function LanguageToggle({ className }: { className?: string }) {
       role="group"
       aria-label={t("language")}
       className={cn(
-        "inline-flex items-center gap-0.5 rounded-md border border-border bg-card/60 p-0.5 text-[11px] font-medium",
+        "inline-flex items-center gap-0.5 rounded-md border border-border p-0.5 text-xs font-semibold",
         className,
       )}
     >
-      <Languages className="ml-1 mr-0.5 h-3.5 w-3.5 text-muted-foreground" aria-hidden />
       <button
         type="button"
         onClick={() => void switchTo("id")}
@@ -57,9 +55,9 @@ export function LanguageToggle({ className }: { className?: string }) {
         aria-label={t("switchToId")}
         disabled={pending !== null}
         className={cn(
-          "rounded-sm px-1.5 py-1 transition",
+          "rounded-sm px-2 py-1 transition-colors",
           active === "id"
-            ? "bg-primary text-primary-foreground shadow-sm"
+            ? "bg-muted text-foreground"
             : "text-muted-foreground hover:bg-muted hover:text-foreground",
           pending && "opacity-60",
         )}
@@ -73,9 +71,9 @@ export function LanguageToggle({ className }: { className?: string }) {
         aria-label={t("switchToEn")}
         disabled={pending !== null}
         className={cn(
-          "rounded-sm px-1.5 py-1 transition",
+          "rounded-sm px-2 py-1 transition-colors",
           active === "en"
-            ? "bg-primary text-primary-foreground shadow-sm"
+            ? "bg-muted text-foreground"
             : "text-muted-foreground hover:bg-muted hover:text-foreground",
           pending && "opacity-60",
         )}

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { ROLE_OPTIONS, type SuggestionPayload } from "@/lib/form-config";
 import { appendSubmission, SheetsConfigError } from "@/lib/sheets";
+import { isHoneypotFilled, rateLimited, serverError } from "@/lib/api-response";
+import { RULES } from "@/lib/rate-limit";
 import {
   fetchActiveUnits,
   formatUnitLabel,
@@ -110,29 +112,24 @@ async function validate(
 }
 
 export async function POST(req: Request) {
+  const limited = rateLimited(req, RULES.submit);
+  if (limited) return limited;
+
   let json: unknown;
   try {
     json = await req.json();
   } catch {
     return NextResponse.json({ error: "JSON tidak valid." }, { status: 400 });
   }
+  // Bot yang mengisi field jebakan diberi balasan sukses palsu supaya
+  // tidak tahu ia tertangkap; datanya tidak disimpan.
+  if (isHoneypotFilled(json)) return NextResponse.json({ ok: true });
 
   let validated: ValidatedPayload | { error: string };
   try {
     validated = await validate(json);
   } catch (err) {
-    if (err instanceof SheetsConfigError) {
-      return NextResponse.json(
-        {
-          error:
-            err.message +
-            " Hubungi pengelola sistem untuk konfigurasi spreadsheet.",
-        },
-        { status: 500 },
-      );
-    }
-    const message = err instanceof Error ? err.message : "Validasi gagal.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return serverError(err, "saran/validate");
   }
   if ("error" in validated) {
     return NextResponse.json({ error: validated.error }, { status: 400 });
@@ -151,23 +148,10 @@ export async function POST(req: Request) {
     });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    if (err instanceof SheetsConfigError) {
-      return NextResponse.json(
-        {
-          error:
-            err.message +
-            " Hubungi pengelola sistem untuk konfigurasi spreadsheet.",
-        },
-        { status: 500 },
-      );
-    }
-    const message =
-      err instanceof Error
-        ? err.message
-        : "Terjadi kesalahan saat menyimpan ke spreadsheet.";
-    return NextResponse.json(
-      { error: `Gagal menyimpan ke Spreadsheet: ${message}` },
-      { status: 502 },
+    return serverError(
+      err,
+      "saran/append",
+      "Masukan belum tersimpan karena gangguan di server. Silakan coba lagi beberapa saat lagi.",
     );
   }
 }

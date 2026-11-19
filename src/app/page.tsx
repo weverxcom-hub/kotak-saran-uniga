@@ -1,176 +1,137 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { ArrowRight } from "lucide-react";
 import { SiteNav } from "@/components/site-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { SITE_CONFIG } from "@/lib/site-config";
-import {
-  ShieldCheck,
-  Sparkles,
-  MessageSquareHeart,
-  Lock,
-  ShieldAlert,
-  ArrowRight,
-  Search,
-  EyeOff,
-} from "lucide-react";
 
 export default function Home() {
   const t = useTranslations("home");
   return (
-    <div className="relative flex min-h-screen flex-col overflow-x-clip">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
-      >
-        <div className="absolute -left-24 top-[-10%] h-[420px] w-[420px] rounded-full bg-primary/20 blur-3xl animate-blob" />
-        <div className="absolute -right-32 top-[10%] h-[420px] w-[420px] rounded-full bg-accent/20 blur-3xl animate-blob [animation-delay:-7s]" />
-        <div className="absolute left-1/4 top-[55%] h-[380px] w-[380px] rounded-full bg-rose-500/10 blur-3xl animate-blob [animation-delay:-3s]" />
-      </div>
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 grid-bg opacity-40"
-      />
-
+    <div className="flex min-h-screen flex-col">
       <SiteNav />
 
-      <main className="container flex-1 pb-16 pt-10 sm:pb-20 sm:pt-14">
-        {/* Hero / intro */}
-        <section className="mx-auto max-w-3xl text-center">
-          <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-accent/40 bg-accent/15 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-accent-foreground dark:bg-accent/20 dark:text-accent">
-            <Sparkles className="h-3.5 w-3.5" />
-            {t("tagline", { short: SITE_CONFIG.universityShort })}
-          </div>
-          <h1 className="mt-5 text-balance text-3xl font-semibold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
-            {t("title")}{" "}
-            <span className="gradient-text">{SITE_CONFIG.universityShort}</span>.
+      <main className="flex-1">
+        {/* Pembuka: rata kiri, tanpa dekorasi. Menjawab "ini apa" dan "siapa yang membaca". */}
+        <section className="container max-w-5xl pb-10 pt-10 sm:pb-14 sm:pt-16">
+          <p className="eyebrow">
+            {t("eyebrow", { university: SITE_CONFIG.universityName })}
+          </p>
+          <h1 className="mt-3 max-w-3xl text-balance text-[2rem] font-semibold leading-[1.15] text-foreground sm:text-5xl">
+            {t("title")}
           </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-pretty text-base text-muted-foreground sm:text-lg">
+          <p className="mt-5 max-w-2xl text-pretty text-lg leading-relaxed text-muted-foreground">
             {t("intro")}
           </p>
         </section>
 
-        {/* Two-card chooser */}
+        {/* Dua saluran sebagai dua kolom bergaris, bukan kartu bergradasi. */}
         <section
           aria-label={t("chooserAria")}
-          className="mt-10 grid gap-5 sm:mt-12 lg:grid-cols-2 lg:gap-7"
+          className="container max-w-5xl"
         >
-          {/* Saran & Kritik */}
-          <Link
-            href="/saran"
-            className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent p-6 shadow-sm ring-1 ring-inset ring-white/5 transition hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10 sm:p-8"
-          >
-            <div
-              aria-hidden
-              className="pointer-events-none absolute -right-12 -top-12 h-44 w-44 rounded-full bg-primary/20 blur-3xl transition-opacity group-hover:opacity-80"
+          <div className="grid border-y border-border md:grid-cols-2">
+            <Channel
+              href="/saran"
+              number="01"
+              title={t("saranTitle")}
+              description={t("saranDescr")}
+              example={t("saranExample")}
+              cta={t("saranCta")}
             />
-            <div className="relative flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-                <MessageSquareHeart className="h-5 w-5" />
-              </div>
-              <span className="rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
-                {t("saranBadge")}
-              </span>
-            </div>
-            <h2 className="relative mt-5 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-              {t("saranTitle")}
-            </h2>
-            <p className="relative mt-2 text-sm text-muted-foreground sm:text-base">
-              {t("saranDescr", { short: SITE_CONFIG.universityShort })}
-            </p>
-            <ul className="relative mt-5 space-y-2 text-sm text-foreground/90">
-              <CardBullet>{t("saranBullet1")}</CardBullet>
-              <CardBullet>{t("saranBullet2")}</CardBullet>
-              <CardBullet>{t("saranBullet3")}</CardBullet>
-            </ul>
-            <div className="relative mt-auto pt-7">
-              <span className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition group-hover:gap-3">
-                {t("saranCta")}
-                <ArrowRight className="h-4 w-4 transition" />
-              </span>
-            </div>
-          </Link>
-
-          {/* Whistleblower */}
-          <Link
-            href="/whistleblower"
-            className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-rose-300/40 bg-gradient-to-br from-rose-500/10 via-rose-500/5 to-transparent p-6 shadow-sm ring-1 ring-inset ring-white/5 transition hover:border-rose-400/60 hover:shadow-lg hover:shadow-rose-500/10 dark:border-rose-500/30 sm:p-8"
-          >
-            <div
-              aria-hidden
-              className="pointer-events-none absolute -right-12 -top-12 h-44 w-44 rounded-full bg-rose-500/20 blur-3xl transition-opacity group-hover:opacity-80"
+            <Channel
+              href="/whistleblower"
+              number="02"
+              title={t("wbTitle")}
+              subtitle={t("wbSub")}
+              description={t("wbDescr")}
+              example={t("wbExample")}
+              cta={t("wbCta")}
+              tone="alert"
+              className="border-t border-border md:border-l md:border-t-0"
             />
-            <div className="relative flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-rose-600 text-white shadow-sm dark:bg-rose-500">
-                <ShieldAlert className="h-5 w-5" />
-              </div>
-              <span className="rounded-full border border-rose-300/50 bg-rose-100/70 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-rose-800 dark:border-rose-500/40 dark:bg-rose-500/15 dark:text-rose-200">
-                {t("wbBadge")}
-              </span>
-            </div>
-            <h2 className="relative mt-5 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-              {t("wbTitle")}
-            </h2>
-            <p className="relative mt-2 text-sm text-muted-foreground sm:text-base">
-              {t("wbDescr")}
-            </p>
-            <ul className="relative mt-5 space-y-2 text-sm text-foreground/90">
-              <CardBullet>{t("wbBullet1")}</CardBullet>
-              <CardBullet>{t("wbBullet2")}</CardBullet>
-              <CardBullet>{t("wbBullet3")}</CardBullet>
-            </ul>
-            <div className="relative mt-auto pt-7">
-              <span className="inline-flex items-center gap-2 rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition group-hover:gap-3 dark:bg-rose-500">
-                {t("wbCta")}
-                <ArrowRight className="h-4 w-4 transition" />
-              </span>
-            </div>
-          </Link>
+          </div>
         </section>
 
-        {/* Trust strip */}
-        <section className="mt-10 grid gap-3 sm:grid-cols-3">
-          <Highlight
-            icon={<EyeOff className="h-4 w-4" />}
-            title={t("trustAnonimTitle")}
-            description={t("trustAnonimDescr")}
-          />
-          <Highlight
-            icon={<Lock className="h-4 w-4" />}
-            title={t("trustSecureTitle")}
-            description={t("trustSecureDescr", {
-              short: SITE_CONFIG.universityShort,
-            })}
-          />
-          <Highlight
-            icon={<ShieldCheck className="h-4 w-4" />}
-            title={t("trustTrackTitle")}
-            description={t("trustTrackDescr")}
-          />
-        </section>
-
-        {/* Lacak Case ID quick CTA */}
-        <section className="mt-8 rounded-2xl border border-border bg-card/60 p-5 shadow-sm sm:flex sm:items-center sm:justify-between sm:gap-4 sm:p-6">
-          <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent/15 text-accent dark:text-accent">
-              <Search className="h-5 w-5" />
-            </div>
+        <section className="container max-w-5xl py-14 sm:py-20">
+          <div className="grid gap-12 md:grid-cols-[1fr_1fr] md:gap-16">
             <div>
-              <p className="text-sm font-semibold text-foreground sm:text-base">
-                {t("lacakBoxTitle")}
-              </p>
-              <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">
-                {t("lacakBoxDescr")}
-              </p>
+              <h2 className="text-2xl font-semibold text-foreground">
+                {t("afterTitle")}
+              </h2>
+              <ol className="mt-6 space-y-6">
+                {[1, 2, 3].map((n) => (
+                  <li key={n} className="grid grid-cols-[2rem_1fr] gap-x-3">
+                    <span className="font-serif text-lg font-semibold leading-6 text-accent">
+                      {n}.
+                    </span>
+                    <div>
+                      <p className="font-semibold text-foreground">
+                        {t(`after${n}Title` as "after1Title")}
+                      </p>
+                      <p className="mt-1 text-muted-foreground">
+                        {t(`after${n}Descr` as "after1Descr")}
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </div>
+
+            <div>
+              <h2 className="text-2xl font-semibold text-foreground">
+                {t("privacyTitle")}
+              </h2>
+              <dl className="mt-6 divide-y divide-border border-y border-border">
+                <div className="py-4">
+                  <dt className="font-semibold text-foreground">
+                    {t("privacyAnonTitle")}
+                  </dt>
+                  <dd className="mt-1 text-muted-foreground">
+                    {t("privacyAnonDescr")}
+                  </dd>
+                </div>
+                <div className="py-4">
+                  <dt className="font-semibold text-foreground">
+                    {t("privacyNamedTitle")}
+                  </dt>
+                  <dd className="mt-1 text-muted-foreground">
+                    {t("privacyNamedDescr")}
+                  </dd>
+                </div>
+              </dl>
+
+              {/* Lacak langsung dari beranda: satu kolom isian, tanpa pindah halaman dulu. */}
+              <form action="/lacak" method="get" className="mt-10">
+                <h3 className="text-lg font-semibold text-foreground">
+                  {t("lacakTitle")}
+                </h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {t("lacakDescr")}
+                </p>
+                <label htmlFor="home-case-id" className="sr-only">
+                  {t("lacakLabel")}
+                </label>
+                <div className="mt-3 flex gap-2">
+                  <input
+                    id="home-case-id"
+                    name="caseId"
+                    required
+                    autoComplete="off"
+                    spellCheck={false}
+                    placeholder="WB-20261119-7KQ4M2XP"
+                    className="h-11 min-w-0 flex-1 rounded-md border border-input bg-card px-3 font-mono text-sm uppercase placeholder:normal-case placeholder:text-muted-foreground/70 focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  />
+                  <button
+                    type="submit"
+                    className="h-11 shrink-0 rounded-md border border-foreground/80 px-4 text-sm font-semibold text-foreground transition-colors hover:bg-foreground hover:text-background"
+                  >
+                    {t("lacakCta")}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
-          <Link
-            href="/lacak"
-            className="mt-4 inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-semibold text-foreground transition hover:bg-muted/60 sm:mt-0 sm:shrink-0"
-          >
-            <Search className="h-4 w-4" />
-            {t("lacakBoxCta")}
-            <ArrowRight className="h-3.5 w-3.5" />
-          </Link>
         </section>
       </main>
 
@@ -179,35 +140,52 @@ export default function Home() {
   );
 }
 
-function CardBullet({ children }: { children: React.ReactNode }) {
-  return (
-    <li className="flex items-start gap-2">
-      <span
-        aria-hidden
-        className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-current opacity-60"
-      />
-      <span>{children}</span>
-    </li>
-  );
-}
-
-function Highlight({
-  icon,
+function Channel({
+  href,
+  number,
   title,
+  subtitle,
   description,
+  example,
+  cta,
+  tone = "default",
+  className = "",
 }: {
-  icon: React.ReactNode;
+  href: string;
+  number: string;
   title: string;
+  subtitle?: string;
   description: string;
+  example: string;
+  cta: string;
+  tone?: "default" | "alert";
+  className?: string;
 }) {
+  const ctaClass =
+    tone === "alert"
+      ? "bg-rose-700 text-white hover:bg-rose-800 dark:bg-rose-300 dark:text-rose-950 dark:hover:bg-rose-200"
+      : "bg-primary text-primary-foreground hover:bg-primary/90";
   return (
-    <div className="flex items-start gap-3 rounded-xl border border-border bg-card/60 p-3.5 backdrop-blur">
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-        {icon}
-      </div>
-      <div className="min-w-0">
-        <p className="text-sm font-medium text-foreground">{title}</p>
-        <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
+    <div className={`flex flex-col py-8 md:px-8 md:first:pl-0 md:last:pr-0 ${className}`}>
+      <p className="font-mono text-xs text-muted-foreground">{number}</p>
+      <h2 className="mt-2 text-2xl font-semibold text-foreground sm:text-[1.75rem]">
+        {title}
+        {subtitle ? (
+          <span className="ml-2 align-middle font-sans text-sm font-normal text-muted-foreground">
+            ({subtitle})
+          </span>
+        ) : null}
+      </h2>
+      <p className="mt-3 text-pretty text-foreground/85">{description}</p>
+      <p className="mt-3 text-pretty text-sm text-muted-foreground">{example}</p>
+      <div className="mt-auto pt-6">
+        <Link
+          href={href}
+          className={`inline-flex h-11 items-center gap-2 rounded-md px-5 text-sm font-semibold transition-colors ${ctaClass}`}
+        >
+          {cta}
+          <ArrowRight className="h-4 w-4" aria-hidden />
+        </Link>
       </div>
     </div>
   );

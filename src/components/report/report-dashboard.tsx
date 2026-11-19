@@ -290,7 +290,7 @@ export function ReportDashboard() {
       </section>
 
       {/* Filters */}
-      <section className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
+      <section className="rounded-2xl border border-border bg-card p-4 sm:p-5">
         <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-foreground">
           <Filter className="h-4 w-4 text-primary" />
           {t("filterTitle")}
@@ -470,7 +470,7 @@ export function ReportDashboard() {
       ) : null}
 
       {/* Table */}
-      <section className="rounded-2xl border border-border bg-card shadow-sm">
+      <section className="rounded-2xl border border-border bg-card">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-3 sm:px-5">
           <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
             <MessageSquareText className="h-4 w-4 text-primary" />

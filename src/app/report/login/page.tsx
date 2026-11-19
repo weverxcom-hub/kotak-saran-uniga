@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Lock, Loader2, AlertCircle, ShieldCheck, Heart } from "lucide-react";
+import { Lock, Loader2, AlertCircle, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -68,22 +68,11 @@ function LoginForm() {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center px-4 py-10">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
-      >
-        <div className="absolute -left-32 top-[-15%] h-[420px] w-[420px] rounded-full bg-primary/15 blur-3xl animate-blob" />
-        <div className="absolute -right-32 top-[20%] h-[420px] w-[420px] rounded-full bg-accent/15 blur-3xl animate-blob [animation-delay:-5s]" />
-      </div>
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 grid-bg opacity-30"
-      />
 
       <main className="w-full max-w-md">
         <div className="mb-8 flex flex-col items-center text-center">
           <BrandMark size={56} />
-          <h1 className="mt-4 text-2xl font-semibold tracking-tight text-foreground">
+          <h1 className="mt-4 text-2xl font-semibold text-foreground">
             {t("title")}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
@@ -93,7 +82,7 @@ function LoginForm() {
 
         <form
           onSubmit={onSubmit}
-          className="space-y-5 rounded-2xl border border-border bg-card p-6 shadow-xl shadow-primary/5 sm:p-7"
+          className="space-y-5 rounded-2xl border border-border bg-card p-6 sm:p-7"
         >
           <div>
             <Label htmlFor="report-password" className="mb-2 block">
@@ -150,18 +139,13 @@ function LoginForm() {
           </p>
         </form>
 
-        <p className="mt-6 flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
-          <span>{tFooter("developWith")}</span>
-          <Heart
-            className="h-3.5 w-3.5 fill-rose-500 text-rose-500"
-            aria-label={tFooter("love")}
-          />
-          <span>{tFooter("by")}</span>
+        <p className="mt-6 text-center text-xs text-muted-foreground">
+          {tFooter("credit")}{" "}
           <a
             href="https://weverx.com"
             target="_blank"
             rel="noopener noreferrer"
-            className="font-medium text-foreground/80 underline-offset-2 transition hover:text-primary hover:underline"
+            className="underline-offset-4 hover:text-foreground hover:underline"
           >
             weverx.com
           </a>

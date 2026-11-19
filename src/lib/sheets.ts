@@ -3,6 +3,8 @@ import {
   isWhistleblowerStatus,
   type WhistleblowerStatus,
 } from "@/lib/whistleblower-config";
+import { safeRow } from "@/lib/safe-cell";
+import { formatWibTimestamp, generateCaseId } from "@/lib/waktu";
 
 /**
  * Klien Google Sheets API — baca dan tulis ke spreadsheet rekap masukan.
@@ -373,14 +375,7 @@ export function applyFilters(
  * kompatibel.
  */
 function formatIndonesianTimestamp(d: Date): string {
-  const pad = (n: number) => String(n).padStart(2, "0");
-  const dd = pad(d.getDate());
-  const mm = pad(d.getMonth() + 1);
-  const yyyy = d.getFullYear();
-  const h = pad(d.getHours());
-  const min = pad(d.getMinutes());
-  const sec = pad(d.getSeconds());
-  return `${dd}/${mm}/${yyyy} ${h}:${min}:${sec}`;
+  return formatWibTimestamp(d);
 }
 
 export type AppendPayload = {
@@ -435,7 +430,7 @@ export async function appendSubmission(payload: AppendPayload): Promise<void> {
     range: "A:L",
     valueInputOption: "USER_ENTERED",
     insertDataOption: "INSERT_ROWS",
-    requestBody: { values: [row] },
+    requestBody: { values: [safeRow(row)] },
   });
 }
 
@@ -454,7 +449,7 @@ export type Stats = {
 // Disimpan di TAB TERPISAH bernama "Whistleblower" pada spreadsheet yang
 // sama. Skema kolom (15 kolom A–O):
 //   A Timestamp
-//   B Case ID            (WB-YYYYMMDD-XXXX, di-generate server)
+//   B Case ID            (WB-YYYYMMDD-XXXXXXXX, di-generate server)
 //   C Kategori
 //   D Saudara adalah
 //   E Unit kerja / Prodi
@@ -612,19 +607,6 @@ async function ensureWhistleblowerSheet(): Promise<void> {
   }
 }
 
-function generateCaseId(now: Date): string {
-  const pad = (n: number) => String(n).padStart(2, "0");
-  const y = now.getFullYear();
-  const m = pad(now.getMonth() + 1);
-  const d = pad(now.getDate());
-  // 4-char base36 random suffix, agar pendek tapi cukup unik untuk
-  // mencegah collision pada submission yang sangat dekat (per-detik).
-  const rand = Math.floor(Math.random() * 36 ** 4)
-    .toString(36)
-    .toUpperCase()
-    .padStart(4, "0");
-  return `WB-${y}${m}${d}-${rand}`;
-}
 
 /**
  * Append satu baris laporan whistleblower ke tab "Whistleblower". Auto
@@ -664,7 +646,7 @@ export async function appendWhistleblowerReport(
     range: `${WHISTLEBLOWER_SHEET_NAME}!A:O`,
     valueInputOption: "USER_ENTERED",
     insertDataOption: "INSERT_ROWS",
-    requestBody: { values: [row] },
+    requestBody: { values: [safeRow(row)] },
   });
   return { caseId, timestamp };
 }
@@ -780,16 +762,39 @@ export async function fetchWhistleblowerPublicStatus(
  * sekaligus mengisi kolom O (Status Updated At) dengan timestamp
  * sekarang.
  */
+export class CaseNotFoundError extends Error {}
+
 export async function updateWhistleblowerStatus(
-  rowIndex: number,
-  input: { status: WhistleblowerStatus; catatanPublik: string },
-): Promise<{ statusUpdatedAt: string }> {
-  if (!Number.isInteger(rowIndex) || rowIndex < 2) {
+  rowIndexHint: number,
+  input: { status: WhistleblowerStatus; catatanPublik: string; caseId?: string },
+): Promise<{ statusUpdatedAt: string; rowIndex: number }> {
+  if (!Number.isInteger(rowIndexHint) || rowIndexHint < 2) {
     throw new Error("rowIndex tidak valid.");
   }
   await ensureWhistleblowerSheet();
   const { sheetId } = getConfig();
   const sheets = getSheetsClient("write");
+
+  // Pastikan baris yang ditulis memang laporan yang dimaksud. Kalau sheet
+  // sempat diurutkan / ada baris dihapus sejak dashboard dimuat, nomor
+  // baris bisa bergeser; cari ulang berdasarkan Case ID.
+  let rowIndex = rowIndexHint;
+  const wanted = input.caseId?.trim().toUpperCase();
+  if (wanted) {
+    const col = await sheets.spreadsheets.values.get({
+      spreadsheetId: sheetId,
+      range: `${WHISTLEBLOWER_SHEET_NAME}!B:B`,
+    });
+    const ids = ((col.data.values as string[][] | undefined) ?? []).map((r) =>
+      (r[0] ?? "").toString().trim().toUpperCase(),
+    );
+    if (ids[rowIndexHint - 1] !== wanted) {
+      const found = ids.indexOf(wanted);
+      if (found < 1) throw new CaseNotFoundError(`Case ID ${wanted} tidak ditemukan.`);
+      rowIndex = found + 1;
+    }
+  }
+
   const now = new Date();
   const sheetCell = formatIndonesianTimestamp(now);
   await sheets.spreadsheets.values.update({
@@ -797,12 +802,12 @@ export async function updateWhistleblowerStatus(
     range: `${WHISTLEBLOWER_SHEET_NAME}!M${rowIndex}:O${rowIndex}`,
     valueInputOption: "USER_ENTERED",
     requestBody: {
-      values: [[input.status, input.catatanPublik, sheetCell]],
+      values: [safeRow([input.status, input.catatanPublik, sheetCell])],
     },
   });
   // Kembalikan ISO ke client biar `new Date(...)` di sisi browser parse benar
   // (kalau dikirim sebagai "DD/MM/YYYY HH:mm:ss", JS Date akan misinterpret jadi MM/DD).
-  return { statusUpdatedAt: now.toISOString() };
+  return { statusUpdatedAt: now.toISOString(), rowIndex };
 }
 
 export type WhistleblowerFilters = {

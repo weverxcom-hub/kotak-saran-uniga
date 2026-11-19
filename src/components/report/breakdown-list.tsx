@@ -34,7 +34,7 @@ export function BreakdownList({
                 </div>
                 <div className="h-1.5 overflow-hidden rounded-full bg-muted">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-primary to-accent transition-all"
+                    className="h-full rounded-full bg-primary transition-all"
                     style={{ width: `${pct}%` }}
                   />
                 </div>

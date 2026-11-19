@@ -1,15 +1,23 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Public_Sans, Source_Serif_4 } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SITE_CONFIG } from "@/lib/site-config";
 
-const inter = Inter({
+// Public Sans: huruf teks yang jelas dan netral (dirancang untuk layanan
+// publik). Source Serif 4: judul, memberi kesan dokumen resmi.
+const sans = Public_Sans({
   subsets: ["latin"],
   variable: "--font-sans",
   display: "swap",
+});
+const serif = Source_Serif_4({
+  subsets: ["latin"],
+  variable: "--font-serif",
+  display: "swap",
+  weight: ["500", "600", "700"],
 });
 
 const SITE_URL =
@@ -60,7 +68,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport = {
-  themeColor: "#1d4ed8",
+  themeColor: "#1c2f6d",
   width: "device-width",
   initialScale: 1,
 };
@@ -78,7 +86,7 @@ export default async function RootLayout({
   const messages = await getMessages();
   return (
     <html lang={locale} suppressHydrationWarning>
-      <body className={`${inter.variable} font-sans antialiased`}>
+      <body className={`${sans.variable} ${serif.variable} font-sans antialiased`}>
         <NextIntlClientProvider locale={locale} messages={messages}>
           <ThemeProvider>{children}</ThemeProvider>
         </NextIntlClientProvider>

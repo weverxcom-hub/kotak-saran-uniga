@@ -3,67 +3,66 @@
 @tailwind utilities;
 
 /*
- * UNIGA Malang palette — navy biru tua + emas/kuning sebagai aksen, mengikuti
- * identitas Universitas Gajayana Malang (dasar biru navy, sorot kuning emas).
- *  - primary  : UNIGA Malang navy
- *  - accent   : UNIGA Malang gold (gradient-text, tombol gradient, highlight)
- *  - destructive tetap merah, success tetap hijau (untuk fungsional UI).
+ * Identitas visual: layanan resmi kampus, bukan landing page startup.
+ *  - kertas hangat + tinta navy, emas UNIGA hanya sebagai garis/aksen kecil
+ *  - tanpa gradasi, bayangan tebal, kaca buram, atau bola cahaya
+ *  - sudut kecil (6px) dan garis tipis sebagai pemisah
  */
 @layer base {
   :root {
-    --background: 220 33% 99%;
-    --foreground: 228 50% 12%;
+    --background: 40 30% 98%;
+    --foreground: 222 47% 11%;
 
-    --muted: 220 18% 96%;
-    --muted-foreground: 222 12% 44%;
+    --muted: 40 20% 94%;
+    --muted-foreground: 220 10% 36%;
 
     --card: 0 0% 100%;
-    --card-foreground: 228 50% 12%;
+    --card-foreground: 222 47% 11%;
 
-    --border: 220 16% 90%;
-    --input: 220 16% 90%;
-    --ring: 228 75% 32%;
+    --border: 35 14% 85%;
+    --input: 35 10% 78%;
+    --ring: 224 64% 36%;
 
-    --primary: 228 75% 28%;
+    --primary: 224 64% 26%;
     --primary-foreground: 0 0% 100%;
 
-    --accent: 43 95% 50%;
-    --accent-foreground: 228 75% 14%;
+    --accent: 42 78% 46%;
+    --accent-foreground: 222 47% 11%;
 
-    --destructive: 0 78% 52%;
+    --destructive: 0 65% 42%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 152 70% 36%;
+    --success: 152 55% 30%;
     --success-foreground: 0 0% 100%;
 
-    --radius: 0.85rem;
+    --radius: 0.375rem;
   }
 
   .dark {
-    --background: 228 60% 7%;
-    --foreground: 210 40% 98%;
+    --background: 222 30% 9%;
+    --foreground: 40 20% 94%;
 
-    --muted: 226 32% 13%;
-    --muted-foreground: 220 14% 72%;
+    --muted: 222 24% 14%;
+    --muted-foreground: 220 12% 70%;
 
-    --card: 228 50% 10%;
-    --card-foreground: 210 40% 98%;
+    --card: 222 28% 12%;
+    --card-foreground: 40 20% 94%;
 
-    --border: 226 30% 19%;
-    --input: 226 30% 19%;
-    --ring: 224 85% 70%;
+    --border: 222 18% 22%;
+    --input: 222 16% 30%;
+    --ring: 220 70% 72%;
 
-    --primary: 224 85% 65%;
-    --primary-foreground: 228 60% 8%;
+    --primary: 220 70% 74%;
+    --primary-foreground: 222 47% 11%;
 
-    --accent: 43 95% 58%;
-    --accent-foreground: 228 60% 8%;
+    --accent: 42 80% 58%;
+    --accent-foreground: 222 47% 11%;
 
-    --destructive: 0 76% 56%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 70% 62%;
+    --destructive-foreground: 222 47% 11%;
 
-    --success: 152 70% 50%;
-    --success-foreground: 228 60% 8%;
+    --success: 152 50% 52%;
+    --success-foreground: 222 47% 11%;
   }
 }
 
@@ -74,8 +73,13 @@
   html,
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: "ss01", "cv11";
     -webkit-font-smoothing: antialiased;
+  }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-serif), Georgia, serif;
+    letter-spacing: -0.01em;
   }
   :focus-visible {
     @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
@@ -89,25 +93,8 @@
   .text-pretty {
     text-wrap: pretty;
   }
-  .glass {
-    @apply bg-card/70 backdrop-blur-xl border border-border;
-  }
-  .gradient-text {
-    background: linear-gradient(
-      90deg,
-      hsl(var(--primary)),
-      hsl(var(--accent))
-    );
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
-  .grid-bg {
-    background-image: radial-gradient(
-      circle at 1px 1px,
-      hsl(var(--border) / 0.55) 1px,
-      transparent 0
-    );
-    background-size: 28px 28px;
+  /* Label kecil di atas judul: huruf kapital renggang, bukan lencana kapsul. */
+  .eyebrow {
+    @apply text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground;
   }
 }
