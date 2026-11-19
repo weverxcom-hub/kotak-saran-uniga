@@ -8,8 +8,9 @@ const securityHeaders = [
   { key: "X-Frame-Options", value: "DENY" },
   { key: "Content-Security-Policy", value: "frame-ancestors 'none'" },
   { key: "X-Content-Type-Options", value: "nosniff" },
-  // Jangan kirim URL lengkap (bisa memuat Case ID) ke situs lain.
-  { key: "Referrer-Policy", value: "same-origin" },
+  // Jangan kirim URL lengkap (bisa memuat Case ID) ke situs lain; cukup
+  // origin-nya (dibutuhkan tombol login Google).
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   {
     key: "Permissions-Policy",
     value: "camera=(), microphone=(), geolocation=(), interest-cohort=()",

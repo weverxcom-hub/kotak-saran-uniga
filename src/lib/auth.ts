@@ -1,16 +1,22 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { isAdminEmail, passwordLoginEnabled } from "@/lib/admin-access";
 
 /**
- * Sederhana, signed cookie session untuk halaman /report.
+ * Signed cookie session untuk halaman /report.
  *
  * - Tidak butuh database / Redis / iron-session.
- * - Cookie body = "<expiresAt>.<hmac(expiresAt)>" yang ditandatangani
- *   menggunakan REPORT_SESSION_SECRET (atau REPORT_PASSWORD sebagai fallback).
+ * - Cookie = "v2.<expiresAt>.<email base64url atau '-'>.<hmac>", ditandatangani
+ *   dengan REPORT_SESSION_SECRET (atau REPORT_PASSWORD sebagai cadangan).
+ *   Email "-" berarti sesi dari login password.
+ * - Setiap pemeriksaan mengecek ulang daftar REPORT_ADMIN_EMAILS, jadi
+ *   menghapus email dari daftar (lalu redeploy) langsung mencabut aksesnya.
  * - Verifikasi konstan-waktu untuk mencegah timing attack.
  */
 
 const SESSION_COOKIE = "kotak-saran-session";
 const DEFAULT_TTL_SECONDS = 60 * 60 * 8; // 8 jam
+const VERSION = "v2";
+const PASSWORD_SUBJECT = "-";
 
 function getSecret(): string {
   const secret = process.env.REPORT_SESSION_SECRET || process.env.REPORT_PASSWORD;
@@ -27,30 +33,52 @@ function sign(message: string): string {
   return createHmac("sha256", getSecret()).update(message).digest("base64url");
 }
 
-export function createSessionToken(ttlSeconds = DEFAULT_TTL_SECONDS): string {
+/** email = null untuk sesi dari login password. */
+export function createSessionToken(
+  email: string | null,
+  ttlSeconds = DEFAULT_TTL_SECONDS,
+): string {
   const expiresAt = Math.floor(Date.now() / 1000) + ttlSeconds;
-  const message = String(expiresAt);
-  const signature = sign(message);
-  return `${message}.${signature}`;
+  const subject = email
+    ? Buffer.from(email.trim().toLowerCase()).toString("base64url")
+    : PASSWORD_SUBJECT;
+  const message = `${VERSION}.${expiresAt}.${subject}`;
+  return `${message}.${sign(message)}`;
+}
+
+type Session = { email: string | null };
+
+export function readSession(token: string | undefined): Session | null {
+  if (!token) return null;
+  const parts = token.split(".");
+  if (parts.length !== 4 || parts[0] !== VERSION) return null;
+  const [, exp, subject, signature] = parts;
+  const message = `${VERSION}.${exp}.${subject}`;
+  let expected: string;
+  try {
+    expected = sign(message);
+  } catch {
+    return null;
+  }
+  const a = Buffer.from(signature);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
+
+  const expiresAt = Number(exp);
+  if (!Number.isFinite(expiresAt) || expiresAt <= Math.floor(Date.now() / 1000)) {
+    return null;
+  }
+
+  if (subject === PASSWORD_SUBJECT) {
+    // Sesi password ikut mati begitu login password dinonaktifkan.
+    return passwordLoginEnabled() ? { email: null } : null;
+  }
+  const email = Buffer.from(subject, "base64url").toString("utf8");
+  return isAdminEmail(email) ? { email } : null;
 }
 
 export function verifySessionToken(token: string | undefined): boolean {
-  if (!token) return false;
-  const [message, signature] = token.split(".");
-  if (!message || !signature) return false;
-  let expectedSignature: string;
-  try {
-    expectedSignature = sign(message);
-  } catch {
-    return false;
-  }
-  const a = Buffer.from(signature);
-  const b = Buffer.from(expectedSignature);
-  if (a.length !== b.length) return false;
-  if (!timingSafeEqual(a, b)) return false;
-  const expiresAt = Number(message);
-  if (!Number.isFinite(expiresAt)) return false;
-  return expiresAt > Math.floor(Date.now() / 1000);
+  return readSession(token) !== null;
 }
 
 export function checkPassword(input: string): boolean {
@@ -64,3 +92,11 @@ export function checkPassword(input: string): boolean {
 }
 
 export const SESSION_COOKIE_NAME = SESSION_COOKIE;
+
+export const SESSION_COOKIE_OPTIONS = {
+  httpOnly: true,
+  sameSite: "lax" as const,
+  secure: process.env.NODE_ENV === "production",
+  path: "/",
+  maxAge: DEFAULT_TTL_SECONDS,
+};

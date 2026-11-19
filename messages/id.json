@@ -310,7 +310,12 @@
     "btn": "Masuk Panel",
     "btnLoading": "Memverifikasi…",
     "errFail": "Gagal masuk.",
-    "footer": "Akses dibatasi internal {short}. Hubungi pengelola sistem bila lupa password."
+    "footer": "Akses dibatasi untuk pengelola {short} yang terdaftar. Hubungi pengelola sistem untuk menambah akun.",
+    "googleHint": "Masuk dengan akun Google yang terdaftar sebagai pengelola.",
+    "googleLoading": "Memuat tombol Google…",
+    "errGoogleLoad": "Tombol Google gagal dimuat. Periksa koneksi, matikan pemblokir iklan untuk situs ini, lalu muat ulang halaman.",
+    "errNotAllowed": "Akun Google ini tidak terdaftar sebagai pengelola. Gunakan akun lain atau hubungi pengelola sistem.",
+    "notConfigured": "Login belum dikonfigurasi. Hubungi pengelola sistem."
   },
   "adminReport": {
     "loading": "Memuat laporan…",

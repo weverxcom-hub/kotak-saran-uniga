@@ -310,7 +310,12 @@
     "btn": "Sign in",
     "btnLoading": "Verifying…",
     "errFail": "Sign-in failed.",
-    "footer": "Access restricted to {short} staff. Contact the system admin if you forgot the password."
+    "footer": "Access is limited to registered {short} administrators. Contact the system admin to add an account.",
+    "googleHint": "Sign in with the Google account registered as an administrator.",
+    "googleLoading": "Loading Google sign-in…",
+    "errGoogleLoad": "The Google button failed to load. Check your connection, disable ad blockers for this site, then reload the page.",
+    "errNotAllowed": "This Google account is not registered as an administrator. Use another account or contact the system admin.",
+    "notConfigured": "Sign-in is not configured yet. Contact the system admin."
   },
   "adminReport": {
     "loading": "Loading reports…",
