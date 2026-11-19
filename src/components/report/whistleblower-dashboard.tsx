@@ -356,7 +356,7 @@ export function WhistleblowerDashboard() {
       {/* Filters */}
       <section className="rounded-2xl border border-border bg-card p-4 sm:p-5">
         <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-foreground">
-          <Filter className="h-4 w-4 text-rose-600" />
+          <Filter className="h-4 w-4 text-rose-600 dark:text-rose-300 dark:text-rose-300" />
           {t("filterTitle")}
           {hasActiveFilters ? (
             <button
@@ -370,7 +370,7 @@ export function WhistleblowerDashboard() {
           ) : null}
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div className="lg:col-span-2">
             <Label htmlFor="wb-q" className="mb-1.5 block text-xs">
               {t("search")}
@@ -578,6 +578,8 @@ export function WhistleblowerDashboard() {
                   <button
                     type="button"
                     onClick={() => setOpenRow(isOpen ? null : id)}
+                    aria-expanded={isOpen}
+                    data-detail-toggle
                     className="flex w-full items-start gap-3 p-4 text-left transition hover:bg-muted/40"
                   >
                     <div className="flex-1 space-y-1.5">

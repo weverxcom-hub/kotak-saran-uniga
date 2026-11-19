@@ -10,6 +10,10 @@
  */
 @layer base {
   :root {
+    /* Kontrol bawaan browser (daftar pilihan, kalender tanggal, scrollbar)
+       ikut tema. Tanpa ini, dropdown di mode gelap tampil putih. */
+    color-scheme: light;
+    --accent-ink: 36 85% 26%;
     --background: 40 30% 98%;
     --foreground: 222 47% 11%;
 
@@ -39,6 +43,8 @@
   }
 
   .dark {
+    color-scheme: dark;
+    --accent-ink: 42 80% 62%;
     --background: 222 30% 9%;
     --foreground: 40 20% 94%;
 
@@ -96,5 +102,18 @@
   /* Label kecil di atas judul: huruf kapital renggang, bukan lencana kapsul. */
   .eyebrow {
     @apply text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground;
+  }
+}
+
+@layer components {
+  /* Panah dropdown untuk <Select>. Sengaja di CSS, bukan kelas bg-[...] di
+     cn(): tailwind-merge menganggap bg-[...] sebagai warna latar dan
+     membuang bg-card, sehingga latar select jatuh ke warna bawaan browser. */
+  .select-chevron {
+    appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%23999' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 0.6rem center;
+    background-size: 16px;
   }
 }

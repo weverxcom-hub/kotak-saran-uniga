@@ -525,7 +525,7 @@ function StepPrivasi({
 
       {state.isAnonim === "Ya" ? (
         <div className="flex items-start gap-3 border-l-2 border-accent pl-4 text-sm text-foreground">
-          <EyeOff className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+          <EyeOff className="mt-0.5 h-4 w-4 shrink-0 text-accent-ink" />
           <div className="space-y-1">
             <p className="font-medium">{t("anonActiveTitle")}</p>
             <p className="text-muted-foreground">{t("anonActiveDescr")}</p>

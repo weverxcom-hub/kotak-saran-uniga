@@ -254,7 +254,7 @@ export function WhistleblowerForm() {
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <Label htmlFor="wb-role" className="mb-2 block">
-              {t("saudaraAdalah")} <span className="text-rose-600">*</span>
+              {t("saudaraAdalah")} <span className="text-rose-600 dark:text-rose-300 dark:text-rose-300">*</span>
             </Label>
             <Select
               id="wb-role"
@@ -281,7 +281,7 @@ export function WhistleblowerForm() {
 
           <div>
             <Label className="mb-2 block">
-              {t("unitProdi")} <span className="text-rose-600">*</span>
+              {t("unitProdi")} <span className="text-rose-600 dark:text-rose-300 dark:text-rose-300">*</span>
             </Label>
             {units.kind === "loading" ? (
               <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2.5 text-sm text-muted-foreground">
@@ -395,7 +395,7 @@ export function WhistleblowerForm() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <Label htmlFor="wb-nama" className="mb-2 block">
-                {t("namaLengkap")} <span className="text-rose-600">*</span>
+                {t("namaLengkap")} <span className="text-rose-600 dark:text-rose-300 dark:text-rose-300">*</span>
               </Label>
               <Input
                 id="wb-nama"
@@ -438,7 +438,7 @@ export function WhistleblowerForm() {
 
         <div>
           <Label htmlFor="wb-kategori" className="mb-2 block">
-            {t("kategori")} <span className="text-rose-600">*</span>
+            {t("kategori")} <span className="text-rose-600 dark:text-rose-300 dark:text-rose-300">*</span>
           </Label>
           <Select
             id="wb-kategori"
@@ -473,7 +473,7 @@ export function WhistleblowerForm() {
 
         <div>
           <Label htmlFor="wb-detail" className="mb-2 block">
-            {t("detail")} <span className="text-rose-600">*</span>
+            {t("detail")} <span className="text-rose-600 dark:text-rose-300 dark:text-rose-300">*</span>
           </Label>
           <Textarea
             id="wb-detail"

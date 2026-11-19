@@ -62,7 +62,7 @@ export default function Home() {
               <ol className="mt-6 space-y-6">
                 {[1, 2, 3].map((n) => (
                   <li key={n} className="grid grid-cols-[2rem_1fr] gap-x-3">
-                    <span className="font-serif text-lg font-semibold leading-6 text-accent">
+                    <span className="font-serif text-lg font-semibold leading-6 text-accent-ink">
                       {n}.
                     </span>
                     <div>

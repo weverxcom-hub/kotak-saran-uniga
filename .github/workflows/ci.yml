@@ -7,7 +7,8 @@ on:
 
 jobs:
   check:
-    runs-on: ubuntu-latest
+    # 24.04: Playwright belum mendukung browser di ubuntu 26.04 (ubuntu-latest).
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -20,3 +21,7 @@ jobs:
       - run: npm test
       - run: npm run build
       - run: npm run smoke
+      # Kontras teks & overflow di mode terang/gelap, desktop/HP, termasuk
+      # panel pengelola (data tiruan). Gagal kalau ada teks tak terbaca.
+      - run: npx playwright install --with-deps chromium
+      - run: npm run ui-check
