@@ -20,3 +20,7 @@ jobs:
       - run: npm test
       - run: npm run build
       - run: npm run smoke
+      # Kontras teks & overflow di mode terang/gelap, desktop/HP, termasuk
+      # panel pengelola (data tiruan). Gagal kalau ada teks tak terbaca.
+      - run: npx playwright install --with-deps chromium
+      - run: npm run ui-check

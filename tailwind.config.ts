@@ -52,6 +52,8 @@ const config: Config = {
         accent: {
           DEFAULT: "hsl(var(--accent) / <alpha-value>)",
           foreground: "hsl(var(--accent-foreground) / <alpha-value>)",
+          // Emas versi gelap untuk TEKS di atas latar terang (kontras >= 4.5).
+          ink: "hsl(var(--accent-ink) / <alpha-value>)",
         },
         destructive: {
           DEFAULT: "hsl(var(--destructive) / <alpha-value>)",

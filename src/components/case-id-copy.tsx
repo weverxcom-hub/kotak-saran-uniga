@@ -25,7 +25,7 @@ export function CaseIdCopy({ caseId }: { caseId: string }) {
     >
       {copied ? (
         <>
-          <Check className="h-3.5 w-3.5 text-emerald-600" />
+          <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
           Tersalin
         </>
       ) : (

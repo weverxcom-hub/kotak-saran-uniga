@@ -306,7 +306,7 @@ export function ReportDashboard() {
           ) : null}
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div className="lg:col-span-2">
             <Label htmlFor="q" className="mb-1.5 block text-xs">
               {t("search")}
@@ -549,6 +549,8 @@ export function ReportDashboard() {
                         <tr
                           className="cursor-pointer border-b border-border/60 transition hover:bg-muted/30"
                           onClick={() => setOpenRow(open ? null : key)}
+                          aria-expanded={open}
+                          data-detail-toggle
                         >
                           <td className="px-4 py-3 text-xs tabular-nums text-muted-foreground">
                             {formatDateTime(r.timestamp, locale)}
@@ -561,7 +563,7 @@ export function ReportDashboard() {
                           </td>
                           <td className="px-4 py-3">
                             {isAnonim ? (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                              <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent-ink">
                                 <EyeOff className="h-3 w-3" /> {tCommon("anonim")}
                               </span>
                             ) : (
@@ -610,13 +612,15 @@ export function ReportDashboard() {
                     <button
                       type="button"
                       onClick={() => setOpenRow(open ? null : key)}
+                      aria-expanded={open}
+                      data-detail-toggle
                       className="flex w-full flex-col gap-2 text-left"
                     >
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex flex-wrap items-center gap-1.5">
                           <RoleBadge role={r.saudaraAdalah} />
                           {isAnonim ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent-ink">
                               <EyeOff className="h-3 w-3" /> {tCommon("anonim")}
                             </span>
                           ) : (
@@ -710,7 +714,7 @@ function RoleBadge({ role }: { role: string }) {
     );
   const palette: Record<string, string> = {
     DOSEN: "bg-primary/10 text-primary",
-    MAHASISWA: "bg-accent/10 text-accent",
+    MAHASISWA: "bg-accent/10 text-accent-ink",
     TENDIK: "bg-success/10 text-success",
   };
   const cls = palette[role] ?? "bg-muted text-foreground";
@@ -739,7 +743,7 @@ function DetailPanel({ row }: { row: SubmissionRow }) {
         label={t("dMode")}
         value={
           isAnonim ? (
-            <span className="text-accent">{tCommon("anonim")}</span>
+            <span className="text-accent-ink">{tCommon("anonim")}</span>
           ) : (
             <span className="text-success">{tCommon("identitas")}</span>
           )
